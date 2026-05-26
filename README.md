@@ -1,6 +1,6 @@
-# indonesaku
+# IndoneSaku
 
-A new Flutter project.
+IndoneSaku adalah aplikasi mobile untuk memudahkan akses masyarakat terhadap informasi dan tiket pertunjukan seni tradisional serta mendukung para pelaku seni dalam memasarkan pertunjukan mereka. IndoneSaku mengintegrasikan berbagai informasi pertunjukan seni tradisional dalam satu tempat yang dapat disesuaikan dengan preferensi pengguna menggunakan bantuan dari AI, serta menyediakan fitur pembelian tiket secara online yang praktis dan aman sehingga pengguna dapat memesan tiket pertunjukan dengan lebih mudah kapan saja dan di mana saja.
 
 ## Getting Started
 
