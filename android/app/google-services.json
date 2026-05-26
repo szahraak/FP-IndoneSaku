@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "678381142054",
+    "project_id": "fp-indonesaku",
+    "storage_bucket": "fp-indonesaku.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:678381142054:android:556e0bea22fba0c12666e7",
+        "android_client_info": {
+          "package_name": "com.example.indonesaku"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDTCn7GMk5T1Ohxky80u6kJ7utQu16MqWk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
