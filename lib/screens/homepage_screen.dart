@@ -331,7 +331,7 @@ class _HomepageScreenState extends State<HomepageScreen> {
             borderRadius: BorderRadius.circular(14),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.06),
+                color: Colors.black.withAlpha((0.06 * 255).round()),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -353,7 +353,7 @@ class _HomepageScreenState extends State<HomepageScreen> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.primary.withAlpha((0.1 * 255).round()),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -395,7 +395,7 @@ class _HomepageScreenState extends State<HomepageScreen> {
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
         scrollDirection: Axis.horizontal,
         itemCount: categories.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
           final isFirst = index == 0;
           return GestureDetector(
@@ -416,7 +416,7 @@ class _HomepageScreenState extends State<HomepageScreen> {
                 boxShadow: isFirst
                     ? [
                         BoxShadow(
-                          color: AppColors.primary.withOpacity(0.3),
+                          color: AppColors.primary.withAlpha((0.3 * 255).round()),
                           blurRadius: 8,
                           offset: const Offset(0, 3),
                         )
@@ -547,7 +547,7 @@ class _HomepageScreenState extends State<HomepageScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   scrollDirection: Axis.horizontal,
                   itemCount: _recommendedShows.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 14),
+                  separatorBuilder: (_, _) => const SizedBox(width: 14),
                   itemBuilder: (context, index) {
                     return _ShowCard(show: _recommendedShows[index]);
                   },
@@ -575,7 +575,7 @@ class _HomepageScreenState extends State<HomepageScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   scrollDirection: Axis.horizontal,
                   itemCount: _trendingShows.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 14),
+                  separatorBuilder: (_, _) => const SizedBox(width: 14),
                   itemBuilder: (context, index) {
                     return _TrendingShowCard(
                       show: _trendingShows[index],
@@ -606,7 +606,7 @@ class _HomepageScreenState extends State<HomepageScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   scrollDirection: Axis.horizontal,
                   itemCount: _recommendedArtists.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 16),
+                  separatorBuilder: (_, _) => const SizedBox(width: 16),
                   itemBuilder: (context, index) {
                     return _ArtistCard(artist: _recommendedArtists[index]);
                   },
@@ -650,7 +650,7 @@ class _UpcomingShowCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.15),
+              color: Colors.black.withAlpha((0.15 * 255).round()),
               blurRadius: 16,
               offset: const Offset(0, 6),
             ),
@@ -666,7 +666,7 @@ class _UpcomingShowCard extends StatelessWidget {
                   ? Image.network(
                       show.posterUrl,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) =>
+                      errorBuilder: (_, _, _) =>
                           _buildPosterPlaceholder(),
                     )
                   : _buildPosterPlaceholder(),
@@ -679,7 +679,7 @@ class _UpcomingShowCard extends StatelessWidget {
                     end: Alignment.bottomCenter,
                     colors: [
                       Colors.transparent,
-                      Colors.black.withOpacity(0.75),
+                      Colors.black.withAlpha((0.75 * 255).round()),
                     ],
                     stops: const [0.4, 1.0],
                   ),
@@ -834,7 +834,7 @@ class _ShowCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.07),
+              color: Colors.black.withAlpha((0.07 * 255).round()),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -852,7 +852,7 @@ class _ShowCard extends StatelessWidget {
                 child: show.posterUrl.isNotEmpty
                     ? Image.network(show.posterUrl,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _placeholder())
+                        errorBuilder: (_, _, _) => _placeholder())
                     : _placeholder(),
               ),
             ),
@@ -910,7 +910,7 @@ class _ShowCard extends StatelessWidget {
   }
 
   Widget _placeholder() => Container(
-        color: AppColors.secondary.withOpacity(0.1),
+        color: AppColors.secondary.withAlpha((0.1 * 255).round()),
         child: const Center(
             child: Icon(Icons.image, color: AppColors.textSecondary)),
       );
@@ -933,7 +933,7 @@ class _TrendingShowCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.07),
+              color: Colors.black.withAlpha((0.07 * 255).round()),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -953,7 +953,7 @@ class _TrendingShowCard extends StatelessWidget {
                     child: show.posterUrl.isNotEmpty
                         ? Image.network(show.posterUrl,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => _placeholder())
+                            errorBuilder: (_, _, _) => _placeholder())
                         : _placeholder(),
                   ),
                   // Rank badge
@@ -966,7 +966,7 @@ class _TrendingShowCard extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: rank <= 3
                             ? AppColors.accent
-                            : AppColors.secondary.withOpacity(0.8),
+                            : AppColors.secondary.withAlpha((0.8 * 255).round()),
                         shape: BoxShape.circle,
                       ),
                       child: Center(
@@ -1031,7 +1031,7 @@ class _TrendingShowCard extends StatelessWidget {
   }
 
   Widget _placeholder() => Container(
-        color: AppColors.secondary.withOpacity(0.1),
+        color: AppColors.secondary.withAlpha((0.1 * 255).round()),
         child: const Center(
             child: Icon(Icons.image, color: AppColors.textSecondary)),
       );
@@ -1058,7 +1058,7 @@ class _ArtistCard extends StatelessWidget {
                 border: Border.all(color: AppColors.primary, width: 2.5),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primary.withOpacity(0.2),
+                    color: AppColors.primary.withAlpha((0.2 * 255).round()),
                     blurRadius: 8,
                     offset: const Offset(0, 3),
                   ),
@@ -1069,7 +1069,7 @@ class _ArtistCard extends StatelessWidget {
                     ? Image.network(
                         artist.fotoUrl,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _avatarPlaceholder(),
+                        errorBuilder: (_, _, _) => _avatarPlaceholder(),
                       )
                     : _avatarPlaceholder(),
               ),
@@ -1107,7 +1107,7 @@ class _ArtistCard extends StatelessWidget {
   Widget _avatarPlaceholder() {
     final initial = artist.nama.isNotEmpty ? artist.nama[0].toUpperCase() : '?';
     return Container(
-      color: AppColors.primary.withOpacity(0.15),
+      color: AppColors.primary.withAlpha((0.15 * 255).round()),
       child: Center(
         child: Text(
           initial,
@@ -1203,8 +1203,8 @@ class _LoadingShimmerState extends State<_LoadingShimmer>
         scrollDirection: Axis.horizontal,
         physics: const NeverScrollableScrollPhysics(),
         itemCount: 4,
-        separatorBuilder: (_, __) => const SizedBox(width: 14),
-        itemBuilder: (_, __) => Opacity(
+        separatorBuilder: (_, _) => const SizedBox(width: 14),
+        itemBuilder: (_, _) => Opacity(
           opacity: _animation.value,
           child: Container(
             width: 148,
