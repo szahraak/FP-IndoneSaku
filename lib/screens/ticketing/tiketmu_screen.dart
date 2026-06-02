@@ -2,8 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import '../../models/tiket_pesanan_model.dart';
-import '../../services/mock_ticketing_service.dart';
+import '../../models/tiket.dart';
+import '../../services/ticketing_service.dart';
 
 class TiketmuScreen extends StatefulWidget {
   final TiketPesanan pesanan;
@@ -381,8 +381,8 @@ class _TiketmuScreenState extends State<TiketmuScreen> {
                   ),
                 );
                 if (confirm == true && context.mounted) {
-                  MockTicketingService.batalkanPesanan(pesanan.id);
-                  Navigator.pop(context);
+                  await TicketingService.batalkanPesanan(pesanan.id);
+                  if (context.mounted) Navigator.pop(context);
                 }
               },
               style: OutlinedButton.styleFrom(

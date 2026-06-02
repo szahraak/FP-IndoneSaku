@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../models/tiket_pesanan_model.dart';
+import '../../models/tiket.dart';
 import '../profile/profile_screen.dart';
 
 class RangkumanPemesananScreen extends StatelessWidget {

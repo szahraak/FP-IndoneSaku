@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'firebase_options.dart';
@@ -12,22 +13,33 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Try to sign in anonymously, but don't crash if it fails
+  if (FirebaseAuth.instance.currentUser == null) {
+    try {
+      await FirebaseAuth.instance.signInAnonymously();
+    } catch (e) {
+      debugPrint('⚠️ Anonymous auth failed (non-fatal): $e');
+      // Continue anyway - app can work with anonymous/no auth
+    }
+  }
+  
   await initializeDateFormatting('id_ID', null);
   SystemChrome.setEnabledSystemUIMode(
     SystemUiMode.manual,
     overlays: [SystemUiOverlay.top],
   );
-  runApp(const MyApp());
+  runApp(const IndoneSakuApp());
 }
 
-class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+class IndoneSakuApp extends StatefulWidget {
+  const IndoneSakuApp({super.key});
 
   @override
-  State<MyApp> createState() => _MyAppState();
+  State<IndoneSakuApp> createState() => _IndoneSakuAppState();
 }
 
-class _MyAppState extends State<MyApp> {
+class _IndoneSakuAppState extends State<IndoneSakuApp> {
   Timer? _rehideTimer;
 
   @override
@@ -59,10 +71,11 @@ class _MyAppState extends State<MyApp> {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF1A1A6E),
+          seedColor: const Color(0xFFB5451B),
         ),
         useMaterial3: true,
         textTheme: GoogleFonts.poppinsTextTheme(),
+        brightness: Brightness.light,
       ),
       home: const MainScaffold(),
     );

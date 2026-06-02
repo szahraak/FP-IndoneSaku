@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../models/tiket_pesanan_model.dart';
-import '../../services/mock_ticketing_service.dart';
+import '../../models/tiket.dart';
+import '../../services/ticketing_service.dart';
 import '../ticketing/tiketmu_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -22,8 +22,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     ('dibatalkan', 'Dibatalkan'),
   ];
 
-  List<TiketPesanan> _getFiltered(String filter) {
-    final all = MockTicketingService.getTiketSaya();
+  List<TiketPesanan> _getFiltered(List<TiketPesanan> all, String filter) {
     final now = DateTime.now();
     switch (filter) {
       case 'aktif':
@@ -76,8 +75,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
     if (confirm == true) {
-      MockTicketingService.batalkanPesanan(pesanan.id);
-      setState(() {});
+      await TicketingService.batalkanPesanan(pesanan.id);
+      // StreamBuilder auto-refreshes, no setState needed
     }
   }
 
@@ -144,11 +143,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           // ── Ticket list ──────────────────────────────────────────
           Expanded(
-            child: _TicketList(
-              pesananList: _getFiltered(_selectedFilter),
-              onRefresh: () => setState(() {}),
-              onBatalkan: _selectedFilter == 'menunggu' ? _batalkan : null,
-              showBatalkan: _selectedFilter == 'menunggu',
+            child: StreamBuilder<List<TiketPesanan>>(
+              stream: TicketingService.getTiketSayaStream(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Text('Gagal memuat tiket: ${snapshot.error}'),
+                  );
+                }
+                final filtered = _getFiltered(
+                    snapshot.data ?? [], _selectedFilter);
+                return _TicketList(
+                  pesananList: filtered,
+                  onRefresh: () => setState(() {}),
+                  onBatalkan:
+                      _selectedFilter == 'menunggu' ? _batalkan : null,
+                  showBatalkan: _selectedFilter == 'menunggu',
+                );
+              },
             ),
           ),
         ],

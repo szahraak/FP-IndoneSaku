@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../models/pertunjukan_model.dart';
-import '../../models/tiket_pesanan_model.dart';
-import '../../services/mock_ticketing_service.dart';
+import '../../models/pertunjukan.dart';
+import '../../models/tiket.dart';
+import '../../services/ticketing_service.dart';
 import 'pembayaran_screen.dart';
 
 class PesanTiketScreen extends StatefulWidget {
-  final PertunjukanModel pertunjukan;
+  final Pertunjukan pertunjukan;
 
   const PesanTiketScreen({super.key, required this.pertunjukan});
 
@@ -17,15 +17,43 @@ class PesanTiketScreen extends StatefulWidget {
 class _PesanTiketScreenState extends State<PesanTiketScreen> {
   // Map jenisTiketId -> jumlah yang dipilih
   final Map<String, int> _selectedQty = {};
+  List<JenisTiket> _jenisTiket = [];
+  String _namaPemesan = 'Pengguna';
+  String _emailPemesan = '';
+  bool _loadingJenisTiket = true;
+  bool _submitting = false;
 
   static const Color _primaryColor = Color(0xFF4B88A2);
 
   final _currencyFmt =
       NumberFormat.currency(locale: 'id_ID', symbol: 'Rp', decimalDigits: 0);
 
+  @override
+  void initState() {
+    super.initState();
+    TicketingService.getJenisTiket(widget.pertunjukan.id).then((list) {
+      if (mounted) {
+        setState(() {
+          _jenisTiket = list;
+          _loadingJenisTiket = false;
+        });
+      }
+    }).catchError((_) {
+      if (mounted) setState(() => _loadingJenisTiket = false);
+    });
+    TicketingService.getCurrentUserInfo().then((info) {
+      if (mounted) {
+        setState(() {
+          _namaPemesan = info['nama'] ?? 'Pengguna';
+          _emailPemesan = info['email'] ?? '';
+        });
+      }
+    });
+  }
+
   double get _totalHarga {
     double total = 0;
-    for (final tiket in widget.pertunjukan.jenisTiket) {
+    for (final tiket in _jenisTiket) {
       total += tiket.harga * (_selectedQty[tiket.id] ?? 0);
     }
     return total;
@@ -54,7 +82,7 @@ class _PesanTiketScreenState extends State<PesanTiketScreen> {
     });
   }
 
-  void _onTambahkan() {
+  void _onTambahkan() async {
     if (_totalItems == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -64,37 +92,48 @@ class _PesanTiketScreenState extends State<PesanTiketScreen> {
       return;
     }
 
-    final items = <ItemPesanan>[];
-    for (final tiket in widget.pertunjukan.jenisTiket) {
-      final qty = _selectedQty[tiket.id] ?? 0;
-      if (qty > 0) {
-        items.add(ItemPesanan(
-          jenisTiketId: tiket.id,
-          namaJenisTiket: tiket.nama,
-          hargaSatuan: tiket.harga,
-          jumlah: qty,
-        ));
+    setState(() => _submitting = true);
+    try {
+      final items = <ItemPesanan>[];
+      for (final tiket in _jenisTiket) {
+        final qty = _selectedQty[tiket.id] ?? 0;
+        if (qty > 0) {
+          items.add(ItemPesanan(
+            jenisTiketId: tiket.id,
+            namaJenisTiket: tiket.nama,
+            hargaSatuan: tiket.harga,
+            jumlah: qty,
+          ));
+        }
       }
+
+      final pesanan = await TicketingService.buatPesanan(
+        pertunjukanId: widget.pertunjukan.id,
+        judulPertunjukan: widget.pertunjukan.judul,
+        posterUrl: widget.pertunjukan.posterUrl,
+        tanggalPertunjukan: widget.pertunjukan.tanggalDateTime,
+        lokasi: widget.pertunjukan.kota,
+        namaPemesan: _namaPemesan,
+        emailPemesan: _emailPemesan,
+        items: items,
+        totalHarga: _totalHarga,
+      );
+
+      if (!mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PembayaranScreen(pesanan: pesanan),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal membuat pesanan: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _submitting = false);
     }
-
-    final pesanan = MockTicketingService.buatPesanan(
-      pertunjukanId: widget.pertunjukan.id,
-      judulPertunjukan: widget.pertunjukan.judul,
-      posterUrl: widget.pertunjukan.posterUrl,
-      tanggalPertunjukan: widget.pertunjukan.tanggal,
-      lokasi: widget.pertunjukan.lokasi,
-      namaPemesan: MockUser.nama,
-      emailPemesan: MockUser.email,
-      items: items,
-      totalHarga: _totalHarga,
-    );
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => PembayaranScreen(pesanan: pesanan),
-      ),
-    );
   }
 
   @override
@@ -167,12 +206,12 @@ class _PesanTiketScreenState extends State<PesanTiketScreen> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                dateFmt.format(show.tanggal),
+                                dateFmt.format(show.tanggalDateTime),
                                 style: TextStyle(
                                     fontSize: 12, color: Colors.grey[600]),
                               ),
                               Text(
-                                'Pukul ${timeFmt.format(show.tanggal)} WIB',
+                                'Pukul ${timeFmt.format(show.tanggalDateTime)} WIB',
                                 style: TextStyle(
                                     fontSize: 12, color: Colors.grey[600]),
                               ),
@@ -184,7 +223,7 @@ class _PesanTiketScreenState extends State<PesanTiketScreen> {
                                       color: Colors.grey[600]),
                                   const SizedBox(width: 2),
                                   Text(
-                                    show.lokasi,
+                                    show.kota,
                                     style: TextStyle(
                                         fontSize: 12, color: Colors.grey[600]),
                                   ),
@@ -199,7 +238,10 @@ class _PesanTiketScreenState extends State<PesanTiketScreen> {
                   const SizedBox(height: 20),
 
                   // ── Ticket type list ───────────────────────────────
-                  ...show.jenisTiket.map((tiket) {
+                  if (_loadingJenisTiket)
+                    const Center(child: CircularProgressIndicator())
+                  else
+                  ..._jenisTiket.map((tiket) {
                     final isHabis = tiket.stok == 0;
                     final qty = _selectedQty[tiket.id] ?? 0;
 
@@ -310,7 +352,7 @@ class _PesanTiketScreenState extends State<PesanTiketScreen> {
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: _totalItems > 0 ? _onTambahkan : null,
+                  onPressed: (_totalItems > 0 && !_submitting) ? _onTambahkan : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _primaryColor,
                     disabledBackgroundColor: Colors.grey[300],
@@ -318,7 +360,14 @@ class _PesanTiketScreenState extends State<PesanTiketScreen> {
                       borderRadius: BorderRadius.circular(24),
                     ),
                   ),
-                  child: Row(
+                  child: _submitting
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
+                        )
+                      : Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(

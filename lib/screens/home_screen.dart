@@ -1,21 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../services/mock_ticketing_service.dart';
-import 'pesan_tiket_screen.dart';
+import '../models/pertunjukan.dart';
+import '../services/ticketing_service.dart';
+import 'ticketing/pesan_tiket_screen.dart';
 
-/// Entry point for the Ticketing feature.
-/// Displays a list of mock shows and a link to "Tiket Saya".
-class TicketingHomeScreen extends StatelessWidget {
-  const TicketingHomeScreen({super.key});
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
 
   static const Color _primaryColor = Color(0xFF4B88A2);
 
   @override
   Widget build(BuildContext context) {
-    final shows = MockTicketingService.getAllPertunjukan();
     final dateFmt = DateFormat('d MMM yyyy, HH:mm', 'id_ID');
-    final currencyFmt =
-        NumberFormat.currency(locale: 'id_ID', symbol: 'Rp', decimalDigits: 0);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -33,15 +29,35 @@ class TicketingHomeScreen extends StatelessWidget {
         centerTitle: true,
         automaticallyImplyLeading: false,
       ),
-      body: ListView.separated(
+      body: StreamBuilder<List<Pertunjukan>>(
+        stream: TicketingService.getPertunjukanStream(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('Gagal memuat data: ${snapshot.error}'));
+          }
+          final shows = snapshot.data ?? [];
+          if (shows.isEmpty) {
+            return const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.event_busy, size: 64, color: Colors.grey),
+                  SizedBox(height: 12),
+                  Text('Belum ada pertunjukan',
+                      style: TextStyle(color: Colors.grey, fontSize: 15)),
+                ],
+              ),
+            );
+          }
+          return ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: shows.length,
         separatorBuilder: (_, _) => const SizedBox(height: 14),
         itemBuilder: (context, index) {
           final show = shows[index];
-          final minPrice = show.jenisTiket
-              .map((t) => t.harga)
-              .reduce((a, b) => a < b ? a : b);
 
           return GestureDetector(
             onTap: () => Navigator.push(
@@ -127,7 +143,7 @@ class TicketingHomeScreen extends StatelessWidget {
                                 size: 13, color: Colors.grey[600]),
                             const SizedBox(width: 4),
                             Text(
-                              dateFmt.format(show.tanggal),
+                              dateFmt.format(show.tanggalDateTime),
                               style: TextStyle(
                                   fontSize: 12, color: Colors.grey[600]),
                             ),
@@ -140,7 +156,7 @@ class TicketingHomeScreen extends StatelessWidget {
                                 size: 13, color: Colors.grey[600]),
                             const SizedBox(width: 4),
                             Text(
-                              '${show.lokasi}, ${show.kota}',
+                              show.kota,
                               style: TextStyle(
                                   fontSize: 12, color: Colors.grey[600]),
                             ),
@@ -152,7 +168,7 @@ class TicketingHomeScreen extends StatelessWidget {
                               MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              'Mulai ${currencyFmt.format(minPrice)}',
+                              'Mulai ${show.formattedHarga}',
                               style: const TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
@@ -183,6 +199,8 @@ class TicketingHomeScreen extends StatelessWidget {
               ),
             ),
           );
+        },
+      );
         },
       ),
     );

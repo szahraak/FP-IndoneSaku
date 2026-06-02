@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'ticketing/ticketing_home_screen.dart';
+import 'home_screen.dart';
 import 'profile/profile_screen.dart';
 
 class MainScaffold extends StatefulWidget {
@@ -21,7 +21,6 @@ class _MainScaffoldState extends State<MainScaffold> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       body: IndexedStack(
         index: _currentIndex,
         children: _pages,
@@ -49,7 +48,7 @@ class _HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const TicketingHomeScreen();
+    return const HomeScreen();
   }
 }
 

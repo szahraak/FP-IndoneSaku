@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../models/tiket_pesanan_model.dart';
-import '../../services/mock_ticketing_service.dart';
+import '../../models/tiket.dart';
+import '../../services/ticketing_service.dart';
 import 'rangkuman_pemesanan_screen.dart';
 
 class _SavedCard {
@@ -335,24 +335,38 @@ class _PembayaranScreenState extends State<PembayaranScreen> {
     return '$m:$s';
   }
 
-  void _onRangkuman() {
+  bool _isSubmitting = false;
+
+  void _onRangkuman() async {
+    if (_isSubmitting) return;
+    setState(() => _isSubmitting = true);
     final namaAkun = switch (_selected) {
       MetodePembayaran.dompetDigital => _selectedWallet ?? _selected.label,
       MetodePembayaran.transferBank => _selectedBank ?? _selected.label,
       MetodePembayaran.kartuKredit => _selectedCard?.maskedNumber ?? _selected.label,
       _ => _selected.label,
     };
-    final updated = MockTicketingService.konfirmasiPembayaran(
-      pesanan: widget.pesanan,
-      metode: _selected,
-      namaAkun: namaAkun,
-    );
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => RangkumanPemesananScreen(pesanan: updated),
-      ),
-    );
+    try {
+      final updated = await TicketingService.konfirmasiPembayaran(
+        pesanan: widget.pesanan,
+        metode: _selected,
+        namaAkun: namaAkun,
+      );
+      if (!mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => RangkumanPemesananScreen(pesanan: updated),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal konfirmasi pembayaran: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
   }
 
   @override
@@ -527,7 +541,7 @@ class _PembayaranScreenState extends State<PembayaranScreen> {
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: _secondsLeft > 0 ? _onRangkuman : null,
+                  onPressed: (_secondsLeft > 0 && !_isSubmitting) ? _onRangkuman : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _primaryColor,
                     disabledBackgroundColor: Colors.grey[300],
