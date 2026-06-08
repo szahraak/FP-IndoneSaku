@@ -3,6 +3,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/pertunjukan.dart';
 import '../models/seniman.dart';
+import 'show_detail_screen.dart';
+import 'browse_shows_screen.dart';
+import 'my_shows_screen.dart';
 
 // ─── App Colors ───────────────────────────────────────────────────────────────
 class AppColors {
@@ -322,7 +325,10 @@ class _HomepageScreenState extends State<HomepageScreen> {
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
       child: GestureDetector(
         onTap: () {
-          // Navigate to search screen
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const BrowseShowsScreen()),
+          );
         },
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -400,8 +406,16 @@ class _HomepageScreenState extends State<HomepageScreen> {
           final isFirst = index == 0;
           return GestureDetector(
             onTap: () {
-              // Filter by category
-            },
+                final cat = categories[index].$2;
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => BrowseShowsScreen(
+                      initialCategory: cat == 'Semua' ? null : cat,
+                    ),
+                  ),
+                );
+              },
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               padding:
@@ -503,9 +517,7 @@ class _HomepageScreenState extends State<HomepageScreen> {
         _buildSectionHeader(
           'Pertunjukan Mendatang',
           'Jangan sampai ketinggalan!',
-          onSeeAll: () {/* Navigate */},
-        ),
-        _upcomingShows.isEmpty
+          onSeeAll: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BrowseShowsScreen())),
             ? _buildEmptyState('Belum ada pertunjukan mendatang')
             : SizedBox(
                 height: 220,
@@ -537,7 +549,7 @@ class _HomepageScreenState extends State<HomepageScreen> {
         _buildSectionHeader(
           title,
           subtitle,
-          onSeeAll: () {/* Navigate */},
+          onSeeAll: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BrowseShowsScreen())),
         ),
         _recommendedShows.isEmpty
             ? _buildEmptyState('Belum ada rekomendasi')
@@ -565,7 +577,7 @@ class _HomepageScreenState extends State<HomepageScreen> {
         _buildSectionHeader(
           '🔥 Lagi Trending',
           'Paling banyak dipesan minggu ini',
-          onSeeAll: () {/* Navigate */},
+          onSeeAll: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BrowseShowsScreen())),
         ),
         _trendingShows.isEmpty
             ? _buildEmptyState('Belum ada data trending')
@@ -596,7 +608,7 @@ class _HomepageScreenState extends State<HomepageScreen> {
         _buildSectionHeader(
           'Seniman Pilihan',
           'Temukan seniman berbakat Indonesia',
-          onSeeAll: () {/* Navigate */},
+          onSeeAll: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BrowseShowsScreen())),
         ),
         _recommendedArtists.isEmpty
             ? _buildEmptyState('Belum ada data seniman')
@@ -642,7 +654,12 @@ class _UpcomingShowCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-        // Navigate to detail screen with show.id
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ShowDetailScreen(showId: show.id, show: show),
+          ),
+        );
       },
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -825,7 +842,12 @@ class _ShowCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        // Navigate to detail
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ShowDetailScreen(showId: show.id, show: show),
+          ),
+        );
       },
       child: Container(
         width: 148,
@@ -925,7 +947,12 @@ class _TrendingShowCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {/* Navigate to detail */},
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ShowDetailScreen(showId: show.id, show: show),
+        ),
+      ),
       child: Container(
         width: 148,
         decoration: BoxDecoration(
@@ -1045,7 +1072,7 @@ class _ArtistCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {/* Navigate to artist profile */},
+      onTap: () {/* Artist profile screen — to be built by other dev */},
       child: SizedBox(
         width: 80,
         child: Column(
