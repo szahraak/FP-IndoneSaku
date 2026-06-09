@@ -2,8 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../models/tiket.dart';
-import '../../services/ticketing_service.dart';
-import 'rangkuman_pemesanan_screen.dart';
+import '../../services/midtrans_service.dart';
+import 'midtrans_snap_screen.dart';
 
 class _SavedCard {
   final String maskedNumber;
@@ -340,29 +340,29 @@ class _PembayaranScreenState extends State<PembayaranScreen> {
   void _onRangkuman() async {
     if (_isSubmitting) return;
     setState(() => _isSubmitting = true);
-    final namaAkun = switch (_selected) {
-      MetodePembayaran.dompetDigital => _selectedWallet ?? _selected.label,
-      MetodePembayaran.transferBank => _selectedBank ?? _selected.label,
-      MetodePembayaran.kartuKredit => _selectedCard?.maskedNumber ?? _selected.label,
-      _ => _selected.label,
-    };
     try {
-      final updated = await TicketingService.konfirmasiPembayaran(
-        pesanan: widget.pesanan,
-        metode: _selected,
-        namaAkun: namaAkun,
-      );
+      final snapResult = await MidtransService.getSnapToken(widget.pesanan);
       if (!mounted) return;
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => RangkumanPemesananScreen(pesanan: updated),
+          builder: (_) => MidtransSnapScreen(
+            pesanan: widget.pesanan,
+            redirectUrl: snapResult.redirectUrl,
+          ),
         ),
+      );
+    } on MidtransException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message)),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal konfirmasi pembayaran: $e')),
+        const SnackBar(
+          content: Text('Gagal memuat halaman pembayaran. Silakan coba lagi.'),
+        ),
       );
     } finally {
       if (mounted) setState(() => _isSubmitting = false);

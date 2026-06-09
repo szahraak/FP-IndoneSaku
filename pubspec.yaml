@@ -49,6 +49,9 @@ dependencies:
   cached_network_image: ^3.4.1
   google_fonts: ^6.2.1
   flutter_native_splash: ^2.4.7
+  flutter_launcher_icons: ^0.14.4
+  cloud_functions: ^6.3.2
+  webview_flutter: ^4.10.0
 
 dev_dependencies:
   flutter_test:
@@ -107,6 +110,11 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/images/IndoneSakuLogo_512.png"
 
 flutter_native_splash:
   color: "#FFFFFF"

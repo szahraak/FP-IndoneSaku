@@ -32,6 +32,8 @@ enum StatusPembayaran { menunggu, berhasil, gagal, kedaluwarsa }
 
 enum StatusPesanan { menunggu, dikonfirmasi, dibatalkan }
 
+// MetodePembayaran dipertahankan untuk label UI — nilai sebenarnya
+// datang dari Midtrans (payment_type di webhook).
 enum MetodePembayaran { qris, dompetDigital, transferBank, kartuKredit }
 
 extension MetodePembayaranExt on MetodePembayaran {
@@ -98,6 +100,20 @@ class TiketPesanan {
   MetodePembayaran? metodePembayaran;
   String? namaAkunPembayaran;
 
+  // ── Midtrans fields ──────────────────────────────────────────────────
+  /// Snap token yang didapat dari Cloud Function — dipakai untuk buka
+  /// halaman pembayaran Midtrans Snap. Nilainya sementara (expire ~1 jam).
+  final String? snapToken;
+
+  /// Order ID yang dikirim ke Midtrans — sama dengan [id] pesanan,
+  /// dipakai untuk mencocokkan webhook callback dari Midtrans.
+  final String? midtransOrderId;
+
+  /// Payment type mentah dari Midtrans (contoh: 'qris', 'bank_transfer',
+  /// 'gopay'). Disimpan untuk keperluan audit/display.
+  String? midtransPaymentType;
+  // ────────────────────────────────────────────────────────────────────
+
   TiketPesanan({
     String? id,
     required this.penggunaUid,
@@ -117,6 +133,9 @@ class TiketPesanan {
     this.nomorPembayaran,
     this.metodePembayaran,
     this.namaAkunPembayaran,
+    this.snapToken,
+    this.midtransOrderId,
+    this.midtransPaymentType,
   })  : id = id ?? const Uuid().v4(),
         dibuatPada = dibuatPada ?? DateTime.now();
 
@@ -152,6 +171,9 @@ class TiketPesanan {
           ? _metodePembayaranFromString(data['metodePembayaran'])
           : null,
       namaAkunPembayaran: data['namaAkunPembayaran'],
+      snapToken: data['snapToken'],
+      midtransOrderId: data['midtransOrderId'],
+      midtransPaymentType: data['midtransPaymentType'],
     );
   }
 
@@ -181,6 +203,9 @@ class TiketPesanan {
       'nomorPembayaran': nomorPembayaran,
       'metodePembayaran': metodePembayaran?.name,
       'namaAkunPembayaran': namaAkunPembayaran,
+      'snapToken': snapToken,
+      'midtransOrderId': midtransOrderId,
+      'midtransPaymentType': midtransPaymentType,
     };
   }
 
