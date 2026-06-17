@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
 import 'profile/profile_screen.dart';
+import 'enseniklopedia/enseniklopedia_screen.dart';
 
 class MainScaffold extends StatefulWidget {
   const MainScaffold({super.key});
@@ -14,17 +15,14 @@ class _MainScaffoldState extends State<MainScaffold> {
 
   final List<Widget> _pages = const [
     _HomePage(),
-    _ArtikelPage(),
+    EnseniklopediaScreen(),
     ProfileScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _pages,
-      ),
+      body: IndexedStack(index: _currentIndex, children: _pages),
       bottomNavigationBar: Padding(
         padding: EdgeInsets.fromLTRB(
           24,
@@ -49,40 +47,6 @@ class _HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const HomeScreen();
-  }
-}
-
-class _ArtikelPage extends StatelessWidget {
-  const _ArtikelPage();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      backgroundColor: Colors.white,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.menu_book_outlined,
-                size: 64, color: Color(0xFF1A1A6E)),
-            SizedBox(height: 12),
-            Text(
-              'Artikel',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1A1A6E),
-              ),
-            ),
-            SizedBox(height: 6),
-            Text(
-              'Fitur ini sedang dikembangkan',
-              style: TextStyle(color: Colors.grey),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
 
@@ -173,9 +137,10 @@ class _NavButtonState extends State<_NavButton>
       vsync: this,
       duration: const Duration(milliseconds: 200),
     );
-    _scaleAnim = Tween<double>(begin: 1.0, end: 0.85).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
-    );
+    _scaleAnim = Tween<double>(
+      begin: 1.0,
+      end: 0.85,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -214,8 +179,7 @@ class _NavButtonState extends State<_NavButton>
                     Icon(
                       widget.item.icon,
                       size: 28,
-                      color:
-                          widget.selected ? _activeColor : _inactiveColor,
+                      color: widget.selected ? _activeColor : _inactiveColor,
                     ),
                     const SizedBox(height: 4),
                     Container(
@@ -225,9 +189,9 @@ class _NavButtonState extends State<_NavButton>
                         color: _activeColor,
                         shape: BoxShape.circle,
                       ),
-                    )
-                  ]
-                )
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
