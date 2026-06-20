@@ -19,7 +19,6 @@ class _BrowseShowsScreenState extends State<BrowseShowsScreen> {
 
   List<Pertunjukan> _shows = [];
   bool _loading = true;
-  bool _hasMore = true;
 
   String _selectedCategory = 'Semua';
   String _selectedKota = '';
@@ -55,7 +54,6 @@ class _BrowseShowsScreenState extends State<BrowseShowsScreen> {
       setState(() {
         _loading = true;
         _shows = [];
-        _hasMore = true;
       });
     }
 
@@ -73,7 +71,6 @@ class _BrowseShowsScreenState extends State<BrowseShowsScreen> {
         setState(() {
           _shows = results;
           _loading = false;
-          _hasMore = results.length == 20;
         });
       }
     } catch (e) {

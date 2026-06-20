@@ -81,15 +81,6 @@ class _ShowDetailBody extends StatelessWidget {
     return '${days[d.weekday - 1]}, ${d.day} ${months[d.month]} ${d.year}';
   }
 
-  Future<void> _openMaps(GeoPoint lokasi, String nama) async {
-    final url =
-        'https://www.google.com/maps/search/?api=1&query=${lokasi.latitude},${lokasi.longitude}';
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final date = show.tanggalDateTime;

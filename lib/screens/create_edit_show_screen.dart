@@ -482,7 +482,7 @@ class _CreateEditShowScreenState extends State<CreateEditShowScreen> {
 
   Widget _buildDropdown() {
     return DropdownButtonFormField<String>(
-      value: _selectedKategori,
+      initialValue: _selectedKategori,
       style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
       decoration: InputDecoration(
         labelText: 'Kategori',

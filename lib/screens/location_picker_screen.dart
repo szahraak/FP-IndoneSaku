@@ -206,7 +206,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.location_search_outlined,
+                      Icon(Icons.location_on_outlined,
                             color: AppColors.textSecondary.withAlpha(
                                 (0.4 * 255).round()),
                             size: 64),

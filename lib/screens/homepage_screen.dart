@@ -5,7 +5,6 @@ import '../models/pertunjukan.dart';
 import '../models/seniman.dart';
 import 'show_detail_screen.dart';
 import 'browse_shows_screen.dart';
-import 'my_shows_screen.dart';
 
 // ─── App Colors ───────────────────────────────────────────────────────────────
 class AppColors {
@@ -518,18 +517,21 @@ class _HomepageScreenState extends State<HomepageScreen> {
           'Pertunjukan Mendatang',
           'Jangan sampai ketinggalan!',
           onSeeAll: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BrowseShowsScreen())),
-            ? _buildEmptyState('Belum ada pertunjukan mendatang')
-            : SizedBox(
-                height: 220,
-                child: PageView.builder(
-                  controller: PageController(viewportFraction: 0.88),
-                  itemCount: _upcomingShows.length,
-                  itemBuilder: (context, index) {
-                    return _UpcomingShowCard(
-                        show: _upcomingShows[index]);
-                  },
-                ),
-              ),
+        ),
+        if (_upcomingShows.isEmpty)
+          _buildEmptyState('Belum ada pertunjukan mendatang')
+        else
+          SizedBox(
+            height: 220,
+            child: PageView.builder(
+              controller: PageController(viewportFraction: 0.88),
+              itemCount: _upcomingShows.length,
+              itemBuilder: (context, index) {
+                return _UpcomingShowCard(
+                    show: _upcomingShows[index]);
+              },
+            ),
+          ),
       ],
     );
   }
