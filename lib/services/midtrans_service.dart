@@ -111,6 +111,26 @@ class MidtransService {
     });
   }
 
+  /// Membatalkan transaksi langsung ke sistem Midtrans
+  static Future<void> cancelTransaction(String orderId) async {
+    try {
+      final callable = _functions.httpsCallable('cancelMidtransTransaction');
+      await callable.call({'orderId': orderId});
+    } on FirebaseFunctionsException catch (e) {
+      // Jika error karena transaksi memang tidak ada di Midtrans (belum terbayar/terdaftar),
+      // kita bisa memilih untuk mengabaikannya agar tetap bisa dibatalkan di Firestore.
+      if (e.message?.contains('404') == true || e.message?.contains('doesn\'t exist') == true) {
+         return; 
+      }
+      throw MidtransException(
+        'Gagal membatalkan transaksi di Midtrans: ${e.message}',
+        code: e.code,
+      );
+    } catch (e) {
+      throw MidtransException('Terjadi kesalahan saat menghubungi server Midtrans.');
+    }
+  }
+
   // ── Helpers ─────────────────────────────────────────────────────────────────
 
   static String _labelFromPaymentType(String paymentType) {

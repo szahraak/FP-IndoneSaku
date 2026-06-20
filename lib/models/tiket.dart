@@ -34,7 +34,7 @@ enum StatusPesanan { menunggu, dikonfirmasi, dibatalkan }
 
 // MetodePembayaran dipertahankan untuk label UI — nilai sebenarnya
 // datang dari Midtrans (payment_type di webhook).
-enum MetodePembayaran { qris, dompetDigital, transferBank, kartuKredit }
+enum MetodePembayaran { qris, dompetDigital, transferBank, kartuKredit, online }
 
 extension MetodePembayaranExt on MetodePembayaran {
   String get label {
@@ -47,6 +47,8 @@ extension MetodePembayaranExt on MetodePembayaran {
         return 'Transfer Bank';
       case MetodePembayaran.kartuKredit:
         return 'Kartu Kredit/Debit';
+      case MetodePembayaran.online:
+        return 'Pembayaran Online';
     }
   }
 
@@ -60,6 +62,8 @@ extension MetodePembayaranExt on MetodePembayaran {
         return 'BCA, Mandiri, BNI, dll';
       case MetodePembayaran.kartuKredit:
         return 'Visa, Mastercard, dll';
+      case MetodePembayaran.online:
+        return 'Pembayaran Online';
     }
   }
 }
@@ -99,6 +103,7 @@ class TiketPesanan {
   final String? nomorPembayaran;
   MetodePembayaran? metodePembayaran;
   String? namaAkunPembayaran;
+  final DateTime batasWaktuPembayaran;
 
   // ── Midtrans fields ──────────────────────────────────────────────────
   /// Snap token yang didapat dari Cloud Function — dipakai untuk buka
@@ -133,6 +138,7 @@ class TiketPesanan {
     this.nomorPembayaran,
     this.metodePembayaran,
     this.namaAkunPembayaran,
+    required this.batasWaktuPembayaran,
     this.snapToken,
     this.midtransOrderId,
     this.midtransPaymentType,
@@ -171,6 +177,8 @@ class TiketPesanan {
           ? _metodePembayaranFromString(data['metodePembayaran'])
           : null,
       namaAkunPembayaran: data['namaAkunPembayaran'],
+      batasWaktuPembayaran: (data['batasWaktuPembayaran'] as Timestamp?)?.toDate() 
+          ?? ((data['dibuatPada'] as Timestamp?)?.toDate() ?? DateTime.now()).add(const Duration(hours: 24)),
       snapToken: data['snapToken'],
       midtransOrderId: data['midtransOrderId'],
       midtransPaymentType: data['midtransPaymentType'],
@@ -203,6 +211,7 @@ class TiketPesanan {
       'nomorPembayaran': nomorPembayaran,
       'metodePembayaran': metodePembayaran?.name,
       'namaAkunPembayaran': namaAkunPembayaran,
+      'batasWaktuPembayaran': Timestamp.fromDate(batasWaktuPembayaran),
       'snapToken': snapToken,
       'midtransOrderId': midtransOrderId,
       'midtransPaymentType': midtransPaymentType,
@@ -238,4 +247,37 @@ class TiketPesanan {
 
   int get totalJumlah =>
       items.fold(0, (total, item) => total + item.jumlah);
+
+  // ── GETTER LABEL PEMBAYARAN SPESIFIK ──────────────────────────────────────────────
+  String get labelPembayaranSpesifik {
+    if (midtransPaymentType == null || midtransPaymentType == 'unknown') {
+      return metodePembayaran?.label ?? 'Pembayaran Online';
+    }
+
+    final type = midtransPaymentType!.toLowerCase();
+
+    if (type.contains('bca')) return 'Transfer Bank - BCA';
+    if (type.contains('bni')) return 'Transfer Bank - BNI';
+    if (type.contains('bri')) return 'Transfer Bank - BRI';
+    if (type.contains('mandiri') || type == 'echannel') return 'Transfer Bank - Mandiri';
+    if (type.contains('permata')) return 'Transfer Bank - Permata';
+    if (type.contains('cimb')) return 'Transfer Bank - CIMB Niaga';
+    if (type == 'bank_transfer') return 'Transfer Bank';
+
+    if (type.contains('indomaret')) return 'Indomaret';
+    if (type.contains('alfamart')) return 'Alfamart';
+    if (type == 'cstore') return 'Minimarket';
+
+    switch (type) {
+      case 'gopay': return 'GoPay';
+      case 'shopeepay': return 'ShopeePay';
+      case 'ovo': return 'OVO';
+      case 'dana': return 'DANA';
+      case 'qris': return 'QRIS';
+      case 'credit_card': return 'Kartu Kredit';
+      case 'akulaku': return 'Akulaku Paylater';
+      default:
+        return metodePembayaran?.label ?? 'Pembayaran Online';
+    }
+  }
 }

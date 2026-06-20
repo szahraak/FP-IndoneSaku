@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../models/tiket.dart';
 import '../../services/ticketing_service.dart';
+import '../../services/midtrans_service.dart';
+import 'midtrans_snap_screen.dart';
 
 class TiketmuScreen extends StatefulWidget {
   final TiketPesanan pesanan;
@@ -19,6 +21,7 @@ class _TiketmuScreenState extends State<TiketmuScreen> {
 
   Timer? _timer;
   Duration _remaining = Duration.zero;
+  bool _isResumingPayment = false;
 
   @override
   void initState() {
@@ -31,8 +34,7 @@ class _TiketmuScreenState extends State<TiketmuScreen> {
   }
 
   void _updateRemaining() {
-    final deadline =
-        widget.pesanan.dibuatPada.add(const Duration(hours: 24));
+    final deadline = widget.pesanan.batasWaktuPembayaran;
     final diff = deadline.difference(DateTime.now());
     setState(() => _remaining = diff.isNegative ? Duration.zero : diff);
     if (diff.isNegative) _timer?.cancel();
@@ -354,6 +356,82 @@ class _TiketmuScreenState extends State<TiketmuScreen> {
               ],
             ),
           ),
+          // ── Resume Payment Button ─────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+            child: SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _primaryColor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                onPressed: _isResumingPayment ? null : () async {
+                  setState(() => _isResumingPayment = true);
+                  try {
+                    // CEK: Apakah pesanan sudah punya snapToken?
+                    if (pesanan.snapToken != null && pesanan.snapToken!.isNotEmpty) {
+                      
+                      // Jika ada, kita gunakan ulang token tersebut.
+                      // Format URL redirect bawaan Midtrans Sandbox adalah:
+                      final redirectUrl = 'https://app.sandbox.midtrans.com/snap/v2/vtweb/${pesanan.snapToken}';
+                      
+                      if (!context.mounted) return;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => MidtransSnapScreen(
+                            pesanan: pesanan,
+                            redirectUrl: redirectUrl,
+                            fromTiketmu: true, 
+                          ),
+                        ),
+                      ).then((_) => setState(() {})); 
+                      
+                    } else {
+                      // Fallback: Jika entah kenapa token kosong, baru panggil Midtrans lagi
+                      final snapResult = await MidtransService.getSnapToken(pesanan);
+                      
+                      if (!context.mounted) return;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => MidtransSnapScreen(
+                            pesanan: pesanan,
+                            redirectUrl: snapResult.redirectUrl,
+                            fromTiketmu: true,
+                          ),
+                        ),
+                      ).then((_) => setState(() {}));
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Gagal memuat pembayaran: $e')),
+                      );
+                    }
+                  } finally {
+                    if (mounted) setState(() => _isResumingPayment = false);
+                  }
+                },
+                child: _isResumingPayment
+                    ? const SizedBox(
+                        width: 20, height: 20,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      )
+                    : const Text(
+                        'Lanjutkan Pembayaran',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+              ),
+            ),
+          ),
           // ── Cancel button ─────────────────────────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
@@ -380,9 +458,34 @@ class _TiketmuScreenState extends State<TiketmuScreen> {
                     ],
                   ),
                 );
+
                 if (confirm == true && context.mounted) {
-                  await TicketingService.batalkanPesanan(pesanan.id);
-                  if (context.mounted) Navigator.pop(context);
+                  // Tambahkan indikator loading (opsional tapi disarankan)
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (_) => const Center(child: CircularProgressIndicator()),
+                  );
+
+                  try {
+                    // 1. Batalkan di Midtrans terlebih dahulu
+                    await MidtransService.cancelTransaction(pesanan.id);
+                    
+                    // 2. Batalkan di database lokal (Firestore)
+                    await TicketingService.batalkanPesanan(pesanan.id);
+                    
+                    if (context.mounted) {
+                      Navigator.pop(context); // Tutup loading dialog
+                      Navigator.pop(context); // Keluar dari screen tiketmu
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      Navigator.pop(context); // Tutup loading dialog jika error
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Gagal membatalkan pesanan: $e')),
+                      );
+                    }
+                  }
                 }
               },
               style: OutlinedButton.styleFrom(
@@ -440,42 +543,42 @@ class _TiketmuScreenState extends State<TiketmuScreen> {
             child: Column(
               children: [
                 ...pesanan.items.map((item) => Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            '${item.namaJenisTiket} x${item.jumlah}',
-                            style: const TextStyle(
-                                fontSize: 13, fontWeight: FontWeight.w500),
-                          ),
-                          Text(
-                            currencyFmt.format(item.subtotal),
-                            style: const TextStyle(
-                                fontSize: 13, fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                    )),
-                if (pesanan.metodePembayaran != null) ...[
-                  const SizedBox(height: 4),
-                  Row(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Metode Pembayaran',
-                        style: TextStyle(
+                      Text(
+                        '${item.namaJenisTiket} x${item.jumlah}',
+                        style: const TextStyle(
                             fontSize: 13, fontWeight: FontWeight.w500),
                       ),
                       Text(
-                        pesanan.metodePembayaran!.label,
+                        currencyFmt.format(item.subtotal),
                         style: const TextStyle(
                             fontSize: 13, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
-                ],
+                )),
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Metode Pembayaran',
+                      style: TextStyle(
+                          fontSize: 13, fontWeight: FontWeight.w500),
+                    ),
+                    Text(
+                      pesanan.labelPembayaranSpesifik,
+                      style: const TextStyle(
+                          fontSize: 13, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
                 const Divider(color: Color(0xFFEEEEEE)),
+                const SizedBox(height: 4),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -494,6 +597,7 @@ class _TiketmuScreenState extends State<TiketmuScreen> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 8),
               ],
             ),
           ),

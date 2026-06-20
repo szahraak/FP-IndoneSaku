@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../../models/tiket.dart';
 import '../../services/ticketing_service.dart';
 import '../ticketing/tiketmu_screen.dart';
+import '../../services/auth_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -80,6 +81,57 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  // ── Tambahan Fungsi Logout ────────────────────────────────────────
+  void _logout() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Keluar Akun?'),
+        content: const Text('Apakah kamu yakin ingin keluar dari aplikasi?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red[600]),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Ya, Keluar',
+                style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        // Karena AuthService tidak menggunakan static method, kita buat instansinya
+        await AuthService().signOut();
+        
+        if (!mounted) return;
+        
+        // Opsi A: Jika kamu menggunakan Named Routes di MaterialApp
+        Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+
+        /* // Opsi B: Jika kamu menggunakan navigasi standard MaterialPageRoute
+        // (Hapus komentar di bawah ini dan gunakan jika kamu tidak pakai named routes)
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+          (route) => false,
+        );
+        */
+
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal keluar: $e')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -97,6 +149,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
         centerTitle: true,
+        // ── Tambahan Tombol Logout di AppBar ───────────────────────
+        actions: [
+          IconButton(
+            onPressed: _logout,
+            icon: const Icon(Icons.logout, color: Colors.red),
+            tooltip: 'Keluar',
+          ),
+        ],
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -87,6 +87,7 @@ class TicketingService {
     required double totalHarga,
   }) async {
     final ref = _db.collection('pesanan').doc();
+    final now = DateTime.now();
     final pesanan = TiketPesanan(
       id: ref.id,
       penggunaUid: _uid,
@@ -99,6 +100,7 @@ class TicketingService {
       emailPemesan: emailPemesan,
       items: items,
       totalHarga: totalHarga,
+      batasWaktuPembayaran: now.add(const Duration(hours: 24)),
       qrCodeData: 'INDONESAKU-${ref.id}-$_uid',
       // midtransOrderId diisi setelah snap token berhasil didapat
       midtransOrderId: ref.id,
