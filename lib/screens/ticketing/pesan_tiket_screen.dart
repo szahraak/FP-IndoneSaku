@@ -84,6 +84,62 @@ class _PesanTiketScreenState extends State<PesanTiketScreen> {
     });
   }
 
+  Future<bool> _showSandboxWarning() async {
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        backgroundColor: Colors.white,
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
+            SizedBox(width: 8),
+            Text('Mode Sandbox', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: ListBody(
+            children: [
+              const Text('Anda sedang berada di lingkungan pengujian (Sandbox).'),
+              const SizedBox(height: 12),
+              const Text(
+                '⚠️ JANGAN gunakan uang atau rekening asli Anda untuk melakukan pembayaran pada halaman selanjutnya.',
+                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
+              ),
+              const SizedBox(height: 16),
+              const Text('Gunakan simulator resmi Midtrans untuk menyimulasikan pembayaran:', style: TextStyle(fontSize: 13)),
+              const SizedBox(height: 4),
+              SelectableText(
+                'https://simulator.sandbox.midtrans.com/',
+                style: TextStyle(color: Colors.blue, fontSize: 13, decoration: TextDecoration.underline),
+              ),
+              const SizedBox(height: 12),
+              const Text('Dokumentasi testing:', style: TextStyle(fontSize: 13)),
+              const SizedBox(height: 4),
+              SelectableText(
+                'https://docs.midtrans.com/docs/testing-payment-on-sandbox',
+                style: TextStyle(color: Colors.blue, fontSize: 13, decoration: TextDecoration.underline),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Batal', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(backgroundColor: _primaryColor),
+            child: const Text('Mengerti', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
+  }
+
   void _onTambahkan() async {
     if (_totalItems == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -91,6 +147,9 @@ class _PesanTiketScreenState extends State<PesanTiketScreen> {
       );
       return;
     }
+
+    final bool confirm = await _showSandboxWarning();
+    if (!confirm) return;
 
     setState(() => _submitting = true);
     TiketPesanan? pesanan; // Deklarasi di luar try untuk handle error fallback
