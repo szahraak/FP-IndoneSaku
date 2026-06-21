@@ -3,7 +3,7 @@ import '../models/pertunjukan.dart';
 import '../services/pertunjukan_service.dart';
 import 'create_edit_show_screen.dart';
 import 'show_detail_screen.dart';
-import 'homepage_screen.dart' show AppColors;
+import '../theme/app_colors.dart';
 
 class MyShowsScreen extends StatelessWidget {
   const MyShowsScreen({super.key});

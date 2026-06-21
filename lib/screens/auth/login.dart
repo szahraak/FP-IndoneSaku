@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:indonesaku/services/auth_service.dart';
+import '../../theme/app_colors.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -23,7 +24,7 @@ class _LoginScreenState extends State<LoginScreen>
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
 
-  static const Color _primaryColor = Color(0xFF4B88A2);
+  static const Color _primaryColor = AppColors.primary;
 
   @override
   void initState() {
@@ -105,7 +106,7 @@ class _LoginScreenState extends State<LoginScreen>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: const Color(0xFFB0202A),
+        backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         margin: const EdgeInsets.all(16),
@@ -193,7 +194,7 @@ class _LoginScreenState extends State<LoginScreen>
                         onFieldSubmitted: (_) => _handleLogin(),
                         style: const TextStyle(
                           fontSize: 15,
-                          color: Color(0xFF333333),
+                          color: AppColors.textPrimary,
                         ),
                         decoration: InputDecoration(
                           hintText: 'Password',
@@ -202,7 +203,7 @@ class _LoginScreenState extends State<LoginScreen>
                             fontSize: 15,
                           ),
                           filled: true,
-                          fillColor: const Color(0xFFF5F5F5),
+                          fillColor: AppColors.inputFill,
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 20,
                             vertical: 16,
@@ -221,21 +222,21 @@ class _LoginScreenState extends State<LoginScreen>
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(30),
                             borderSide: const BorderSide(
-                              color: Color(0xFF4A7FA5),
+                              color: AppColors.primary,
                               width: 1.5,
                             ),
                           ),
                           errorBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(30),
                             borderSide: const BorderSide(
-                              color: Color(0xFFB0202A),
+                              color: AppColors.error,
                               width: 1,
                             ),
                           ),
                           focusedErrorBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(30),
                             borderSide: const BorderSide(
-                              color: Color(0xFFB0202A),
+                              color: AppColors.error,
                               width: 1.5,
                             ),
                           ),
@@ -343,7 +344,7 @@ class _LoginScreenState extends State<LoginScreen>
                             child: const Text(
                               'Daftar',
                               style: TextStyle(
-                                color: Color(0xFFB0202A),
+                                color: AppColors.primary,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w900,
                               ),
@@ -391,7 +392,7 @@ class _BuildTextField extends StatelessWidget {
       textInputAction: textInputAction,
       style: const TextStyle(
         fontSize: 15,
-        color: Color(0xFF333333),
+        color: AppColors.textPrimary,
       ),
       decoration: InputDecoration(
         hintText: hintText,
@@ -401,7 +402,7 @@ class _BuildTextField extends StatelessWidget {
         ),
         prefixIcon: prefixIcon,
         filled: true,
-        fillColor: const Color(0xFFF5F5F5),
+        fillColor: AppColors.inputFill,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 20,
           vertical: 16,
@@ -420,21 +421,21 @@ class _BuildTextField extends StatelessWidget {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
           borderSide: const BorderSide(
-            color: Color(0xFF4A7FA5),
+            color: AppColors.primary,
             width: 1.5,
           ),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
           borderSide: const BorderSide(
-            color: Color(0xFFB0202A),
+            color: AppColors.error,
             width: 1,
           ),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
           borderSide: const BorderSide(
-            color: Color(0xFFB0202A),
+            color: AppColors.error,
             width: 1.5,
           ),
         ),
@@ -455,13 +456,13 @@ class _PlaceholderLogo extends StatelessWidget {
           width: 70,
           height: 70,
           decoration: BoxDecoration(
-            color: const Color(0xFF4A7FA5).withValues(alpha:0.12),
+            color: AppColors.primary.withValues(alpha:0.12),
             shape: BoxShape.circle,
           ),
           child: const Icon(
             Icons.theater_comedy_outlined,
             size: 36,
-            color: Color(0xFF4A7FA5),
+            color: AppColors.primary,
           ),
         ),
         const SizedBox(height: 10),

@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../theme/app_colors.dart';
 import '../../models/tiket.dart';
 import '../../services/ticketing_service.dart';
 import '../ticketing/tiketmu_screen.dart';
 import '../../services/auth_service.dart';
+import '../my_shows_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -13,8 +17,10 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  static const Color _primaryColor = Color(0xFF4B88A2);
   String _selectedFilter = 'aktif';
+  String _tipeAkun = 'penonton';
+  String _userName = '';
+  String _userEmail = '';
 
   static const _filters = [
     ('aktif', 'Aktif'),
@@ -22,6 +28,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
     ('selesai', 'Selesai'),
     ('dibatalkan', 'Dibatalkan'),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserProfile();
+  }
+
+  Future<void> _loadUserProfile() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      if (doc.exists && mounted) {
+        setState(() {
+          _tipeAkun = doc.data()?['tipeAkun'] ?? 'penonton';
+          _userName = doc.data()?['nama'] ?? '';
+          _userEmail = doc.data()?['email'] ?? user.email ?? '';
+        });
+      } else if (mounted) {
+        setState(() {
+          _userEmail = user.email ?? '';
+        });
+      }
+    } catch (_) {}
+  }
 
   List<TiketPesanan> _getFiltered(List<TiketPesanan> all, String filter) {
     final now = DateTime.now();
@@ -67,7 +101,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red[600]),
+                backgroundColor: AppColors.error),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Ya, Batalkan',
                 style: TextStyle(color: Colors.white)),
@@ -77,11 +111,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
     if (confirm == true) {
       await TicketingService.batalkanPesanan(pesanan.id);
-      // StreamBuilder auto-refreshes, no setState needed
     }
   }
 
-  // ── Tambahan Fungsi Logout ────────────────────────────────────────
   void _logout() async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -95,7 +127,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red[600]),
+                backgroundColor: AppColors.error),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Ya, Keluar',
                 style: TextStyle(color: Colors.white)),
@@ -106,23 +138,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (confirm == true) {
       try {
-        // Karena AuthService tidak menggunakan static method, kita buat instansinya
         await AuthService().signOut();
-        
         if (!mounted) return;
-        
-        // Opsi A: Jika kamu menggunakan Named Routes di MaterialApp
         Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
-
-        /* // Opsi B: Jika kamu menggunakan navigasi standard MaterialPageRoute
-        // (Hapus komentar di bawah ini dan gunakan jika kamu tidak pakai named routes)
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
-          (route) => false,
-        );
-        */
-
       } catch (e) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -135,25 +153,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
         elevation: 0,
         automaticallyImplyLeading: false,
         title: const Text(
           'Profil',
           style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w600,
             fontSize: 18,
           ),
         ),
         centerTitle: true,
-        // ── Tambahan Tombol Logout di AppBar ───────────────────────
         actions: [
           IconButton(
             onPressed: _logout,
-            icon: const Icon(Icons.logout, color: Colors.red),
+            icon: const Icon(Icons.logout, color: Colors.white),
             tooltip: 'Keluar',
           ),
         ],
@@ -161,6 +178,87 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ── User info header ─────────────────────────────────────
+          Container(
+            width: double.infinity,
+            color: AppColors.primary,
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+            child: Column(
+              children: [
+                CircleAvatar(
+                  radius: 30,
+                  backgroundColor: Colors.white.withValues(alpha: 0.2),
+                  child: Text(
+                    _userName.isNotEmpty ? _userName[0].toUpperCase() : '?',
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _userName.isNotEmpty ? _userName : 'Pengguna',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+                if (_userEmail.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    _userEmail,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.white.withValues(alpha: 0.8),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+
+          // ── Seniman: Pertunjukan Saya button ────────────────────
+          if (_tipeAkun == 'seniman')
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              child: SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const MyShowsScreen()),
+                  ),
+                  icon: const Icon(Icons.theater_comedy),
+                  label: const Text('Pertunjukan Saya'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                    side: const BorderSide(color: AppColors.primary),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
+            ),
+
+          // ── Section title ───────────────────────────────────────
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
+            child: Text(
+              'Tiket Saya',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+
           // ── Filter chips ────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
@@ -175,10 +273,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     onSelected: (_) =>
                         setState(() => _selectedFilter = f.$1),
                     selectedColor:
-                        _primaryColor.withValues(alpha: 0.12),
-                    checkmarkColor: _primaryColor,
+                        AppColors.primary.withValues(alpha: 0.12),
+                    checkmarkColor: AppColors.primary,
                     labelStyle: TextStyle(
-                      color: isSelected ? _primaryColor : Colors.grey[700],
+                      color: isSelected ? AppColors.primary : Colors.grey[700],
                       fontWeight: isSelected
                           ? FontWeight.bold
                           : FontWeight.normal,
@@ -186,7 +284,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     side: BorderSide(
                       color: isSelected
-                          ? _primaryColor
+                          ? AppColors.primary
                           : Colors.grey[300]!,
                     ),
                     backgroundColor: Colors.white,
@@ -201,13 +299,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
               }).toList(),
             ),
           ),
+
           // ── Ticket list ──────────────────────────────────────────
           Expanded(
             child: StreamBuilder<List<TiketPesanan>>(
               stream: TicketingService.getTiketSayaStream(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const Center(
+                    child: CircularProgressIndicator(
+                        color: AppColors.primary),
+                  );
                 }
                 if (snapshot.hasError) {
                   return Center(
@@ -267,7 +369,7 @@ class _TicketList extends StatelessWidget {
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: pesananList.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 12),
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final pesanan = pesananList[index];
         return _TicketCard(
@@ -284,18 +386,16 @@ class _TicketCard extends StatelessWidget {
   final TiketPesanan pesanan;
   final void Function(TiketPesanan)? onBatalkan;
 
-  static const Color _primaryColor = Color(0xFF1A1A6E);
-
   const _TicketCard({required this.pesanan, this.onBatalkan});
 
   Color get _statusColor {
     switch (pesanan.statusPesanan) {
       case StatusPesanan.dikonfirmasi:
-        return const Color(0xFF38A169);
+        return AppColors.success;
       case StatusPesanan.menunggu:
-        return const Color(0xFFD69E2E);
+        return AppColors.warning;
       case StatusPesanan.dibatalkan:
-        return const Color(0xFFE53E3E);
+        return AppColors.error;
     }
   }
 
@@ -325,7 +425,7 @@ class _TicketCard extends StatelessWidget {
       ),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.cardBackground,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -337,7 +437,6 @@ class _TicketCard extends StatelessWidget {
         ),
         child: Column(
           children: [
-            // ── Top section ──────────────────────────────────────
             Padding(
               padding: const EdgeInsets.all(14),
               child: Row(
@@ -350,11 +449,12 @@ class _TicketCard extends StatelessWidget {
                       width: 60,
                       height: 75,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) => Container(
+                      errorBuilder: (_, __, ___) => Container(
                         width: 60,
                         height: 75,
-                        color: _primaryColor.withValues(alpha: 0.15),
-                        child: const Icon(Icons.image, color: _primaryColor),
+                        color: AppColors.primary.withValues(alpha: 0.15),
+                        child: const Icon(Icons.image,
+                            color: AppColors.primary),
                       ),
                     ),
                   ),
@@ -368,7 +468,7 @@ class _TicketCard extends StatelessWidget {
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
-                            color: Color(0xFF1A1A1A),
+                            color: AppColors.textPrimary,
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -398,7 +498,6 @@ class _TicketCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  // Status badge
                   Container(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 8, vertical: 3),
@@ -417,8 +516,6 @@ class _TicketCard extends StatelessWidget {
                 ],
               ),
             ),
-
-            // Dashed divider
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14),
               child: Row(
@@ -433,8 +530,6 @@ class _TicketCard extends StatelessWidget {
                 ),
               ),
             ),
-
-            // ── Bottom section ────────────────────────────────────
             Padding(
               padding: const EdgeInsets.all(14),
               child: Row(
@@ -453,7 +548,7 @@ class _TicketCard extends StatelessWidget {
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 15,
-                          color: _primaryColor,
+                          color: AppColors.primary,
                         ),
                       ),
                     ],
@@ -464,7 +559,7 @@ class _TicketCard extends StatelessWidget {
                         TextButton(
                           onPressed: () => onBatalkan!(pesanan),
                           style: TextButton.styleFrom(
-                            foregroundColor: Colors.red[600],
+                            foregroundColor: AppColors.error,
                           ),
                           child: const Text('Batalkan'),
                         ),
@@ -479,7 +574,7 @@ class _TicketCard extends StatelessWidget {
                             ),
                           ),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: _primaryColor,
+                            backgroundColor: AppColors.primary,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),

@@ -7,7 +7,7 @@ import '../models/pertunjukan.dart';
 import '../services/pertunjukan_service.dart';
 import '../services/cloudinary_service.dart';
 import 'location_picker_screen.dart';
-import 'homepage_screen.dart' show AppColors;
+import '../theme/app_colors.dart';
 
 class CreateEditShowScreen extends StatefulWidget {
   /// Pass an existing [Pertunjukan] to edit it; null = create new.

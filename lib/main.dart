@@ -7,6 +7,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'firebase_options.dart';
+import 'theme/app_colors.dart';
 import 'screens/main_scaffold.dart';
 import 'screens/auth/login.dart';
 import 'screens/auth/forgot_password.dart';
@@ -65,12 +66,12 @@ class _IndoneSakuAppState extends State<IndoneSakuApp> {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFFB5451B),
+          seedColor: AppColors.primary,
         ),
         useMaterial3: true,
         textTheme: GoogleFonts.poppinsTextTheme(),
         brightness: Brightness.light,
-        scaffoldBackgroundColor: const Color(0xFFF7F3EE),
+        scaffoldBackgroundColor: AppColors.scaffoldBackground,
       ),
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
@@ -105,7 +106,7 @@ class AuthGate extends StatelessWidget {
             backgroundColor: Colors.white,
             body: Center(
               child: CircularProgressIndicator(
-                color: Color(0xFF4A7FA5),
+                color: AppColors.primary,
               ),
             ),
           );

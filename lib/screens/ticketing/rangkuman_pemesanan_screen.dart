@@ -3,13 +3,14 @@ import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/tiket.dart';
 import '../main_scaffold.dart';
+import '../../theme/app_colors.dart';
 
 class RangkumanPemesananScreen extends StatelessWidget {
   final TiketPesanan pesanan;
 
   const RangkumanPemesananScreen({super.key, required this.pesanan});
 
-  static const Color _primaryColor = Color(0xFF4B88A2);
+  static const Color _primaryColor = AppColors.primary;
 
   @override
   Widget build(BuildContext context) {
@@ -105,7 +106,7 @@ class RangkumanPemesananScreen extends StatelessWidget {
                                       style: const TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 14,
-                                        color: Color(0xFF1A1A1A),
+                                        color: AppColors.textPrimary,
                                       ),
                                     ),
                                     const SizedBox(height: 6),
@@ -142,7 +143,7 @@ class RangkumanPemesananScreen extends StatelessWidget {
                               valueBold: true,
                             ),
                             const Divider(
-                                height: 24, thickness: 1, color: Color(0xFFEEEEEE)),
+                                height: 24, thickness: 1, color: AppColors.divider),
 
                             // Per-item breakdown
                             ...displayPesanan.items.map((item) => _DetailRow(
@@ -153,7 +154,7 @@ class RangkumanPemesananScreen extends StatelessWidget {
                                 )),
 
                             const Divider(
-                                height: 24, thickness: 1, color: Color(0xFFEEEEEE)),
+                                height: 24, thickness: 1, color: AppColors.divider),
                             _DetailRow(
                               label: 'Total Pembayaran',
                               value: currencyFmt.format(displayPesanan.totalHarga),
@@ -268,7 +269,7 @@ class _DetailRow extends StatelessWidget {
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: valueBold ? FontWeight.bold : FontWeight.normal,
-                color: const Color(0xFF1A1A1A),
+                color: AppColors.textPrimary,
               ),
             ),
           ),

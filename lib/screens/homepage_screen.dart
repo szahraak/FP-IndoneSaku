@@ -5,20 +5,7 @@ import '../models/pertunjukan.dart';
 import '../models/seniman.dart';
 import 'show_detail_screen.dart';
 import 'browse_shows_screen.dart';
-
-// ─── App Colors ───────────────────────────────────────────────────────────────
-class AppColors {
-  static const Color primary = Color(0xFFB5451B);       // deep batik terracotta
-  static const Color primaryLight = Color(0xFFE8603A);
-  static const Color secondary = Color(0xFF1A1A2E);     // deep navy
-  static const Color accent = Color(0xFFF5C842);        // gold accent
-  static const Color background = Color(0xFFF7F3EE);    // warm cream
-  static const Color surface = Color(0xFFFFFFFF);
-  static const Color textPrimary = Color(0xFF1A1A2E);
-  static const Color textSecondary = Color(0xFF6B6B7B);
-  static const Color cardBackground = Color(0xFFFFFFFF);
-  static const Color divider = Color(0xFFE8E0D8);
-}
+import '../theme/app_colors.dart';
 
 // ─── Homepage Screen ──────────────────────────────────────────────────────────
 class HomepageScreen extends StatefulWidget {

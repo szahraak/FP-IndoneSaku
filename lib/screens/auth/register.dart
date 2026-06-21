@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:indonesaku/services/auth_service.dart';
+import '../../theme/app_colors.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -45,7 +46,7 @@ class _RegisterScreenState extends State<RegisterScreen>
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
 
-  static const Color _primaryColor = Color(0xFF4B88A2);
+  static const Color _primaryColor = AppColors.primary;
 
   @override
   void initState() {
@@ -123,7 +124,7 @@ class _RegisterScreenState extends State<RegisterScreen>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: const Color(0xFFB0202A),
+        backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         margin: const EdgeInsets.all(16),
@@ -215,7 +216,7 @@ class _RegisterScreenState extends State<RegisterScreen>
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
-                color: Color(0xFF333333),
+                color: AppColors.textPrimary,
               ),
             ),
 
@@ -337,7 +338,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                   readOnly: true,
                   onTap: _pickTanggalLahir,
                   style: const TextStyle(
-                      fontSize: 15, color: Color(0xFF333333)),
+                      fontSize: 15, color: AppColors.textPrimary),
                   decoration: _inputDecoration('DD/MM/YYYY').copyWith(
                     suffixIcon: const Icon(
                       Icons.calendar_today_outlined,
@@ -385,7 +386,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                   obscureText: !_isPasswordVisible,
                   textInputAction: TextInputAction.done,
                   style: const TextStyle(
-                      fontSize: 15, color: Color(0xFF333333)),
+                      fontSize: 15, color: AppColors.textPrimary),
                   decoration: _inputDecoration('••••••••').copyWith(
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -501,7 +502,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                     decoration: BoxDecoration(
                       color: isSelected
                           ? _primaryColor.withValues(alpha:0.12)
-                          : const Color(0xFFF5F5F5),
+                          : AppColors.inputFill,
                       borderRadius: BorderRadius.circular(30),
                       border: Border.all(
                         color: isSelected
@@ -553,7 +554,7 @@ InputDecoration _inputDecoration(String hint) {
     hintText: hint,
     hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 15),
     filled: true,
-    fillColor: const Color(0xFFF5F5F5),
+    fillColor: AppColors.inputFill,
     contentPadding:
         const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
     border: OutlineInputBorder(
@@ -566,15 +567,15 @@ InputDecoration _inputDecoration(String hint) {
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(30),
-      borderSide: const BorderSide(color: Color(0xFF4A7FA5), width: 1.5),
+      borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
     ),
     errorBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(30),
-      borderSide: const BorderSide(color: Color(0xFFB0202A), width: 1),
+      borderSide: const BorderSide(color: AppColors.error, width: 1),
     ),
     focusedErrorBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(30),
-      borderSide: const BorderSide(color: Color(0xFFB0202A), width: 1.5),
+      borderSide: const BorderSide(color: AppColors.error, width: 1.5),
     ),
   );
 }
@@ -600,7 +601,7 @@ class _StyledTextField extends StatelessWidget {
       controller: controller,
       keyboardType: keyboardType,
       textInputAction: textInputAction,
-      style: const TextStyle(fontSize: 15, color: Color(0xFF333333)),
+      style: const TextStyle(fontSize: 15, color: AppColors.textPrimary),
       decoration: _inputDecoration(hintText),
       validator: validator,
     );
@@ -644,11 +645,11 @@ class _TipeAkunChip extends StatelessWidget {
         padding:
             const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFB0202A) : Colors.transparent,
+          color: isSelected ? AppColors.primary : Colors.transparent,
           borderRadius: BorderRadius.circular(30),
           border: Border.all(
             color: isSelected
-                ? const Color(0xFFB0202A)
+                ? AppColors.primary
                 : Colors.grey.shade300,
             width: 1.5,
           ),
@@ -671,7 +672,7 @@ class _PrimaryButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final bool isLoading;
 
-  static const Color _primaryColor = Color(0xFF4B88A2);
+  static const Color _primaryColor = AppColors.primary;
 
   const _PrimaryButton({
     required this.label,
@@ -726,7 +727,7 @@ class _LoginLink extends StatelessWidget {
           child: const Text(
             'Masuk',
             style: TextStyle(
-              color: Color(0xFFB0202A),
+              color: AppColors.primary,
               fontSize: 14,
               fontWeight: FontWeight.bold,
             ),
@@ -748,14 +749,14 @@ class _PlaceholderLogo extends StatelessWidget {
             style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFFB0202A)),
+                color: AppColors.primary),
           ),
           TextSpan(
             text: 'Saku',
             style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF1A237E)),
+                color: AppColors.secondary),
           ),
         ],
       ),

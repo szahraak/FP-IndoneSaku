@@ -6,6 +6,7 @@ import '../../models/tiket.dart';
 import '../../services/ticketing_service.dart';
 import '../../services/midtrans_service.dart';
 import 'midtrans_snap_screen.dart';
+import '../../theme/app_colors.dart';
 
 class TiketmuScreen extends StatefulWidget {
   final TiketPesanan pesanan;
@@ -17,7 +18,7 @@ class TiketmuScreen extends StatefulWidget {
 }
 
 class _TiketmuScreenState extends State<TiketmuScreen> {
-  static const Color _primaryColor = Color(0xFF4B88A2);
+  static const Color _primaryColor = AppColors.primary;
 
   Timer? _timer;
   Duration _remaining = Duration.zero;
@@ -57,7 +58,7 @@ class _TiketmuScreenState extends State<TiketmuScreen> {
         'INDONESAKU-${pesanan.id}-${pesanan.penggunaUid}';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFEEEEEE),
+      backgroundColor: AppColors.divider,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -119,7 +120,7 @@ class _TiketmuScreenState extends State<TiketmuScreen> {
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A1A1A),
+                          color: AppColors.textPrimary,
                           height: 1.3,
                         ),
                       ),
@@ -129,7 +130,7 @@ class _TiketmuScreenState extends State<TiketmuScreen> {
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A1A1A),
+                          color: AppColors.textPrimary,
                         ),
                       ),
                     ],
@@ -163,7 +164,7 @@ class _TiketmuScreenState extends State<TiketmuScreen> {
                                 style: const TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFF1A1A1A),
+                                  color: AppColors.textPrimary,
                                 ),
                               ),
                             ],
@@ -198,7 +199,7 @@ class _TiketmuScreenState extends State<TiketmuScreen> {
                                   style: const TextStyle(
                                     fontSize: 20,
                                     fontWeight: FontWeight.bold,
-                                    color: Color(0xFF1A1A1A),
+                                    color: AppColors.textPrimary,
                                   ),
                                 ),
                               ],
@@ -231,7 +232,7 @@ class _TiketmuScreenState extends State<TiketmuScreen> {
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A1A1A),
+                          color: AppColors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 14),
@@ -246,7 +247,7 @@ class _TiketmuScreenState extends State<TiketmuScreen> {
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A1A1A),
+                          color: AppColors.textPrimary,
                         ),
                       ),
                     ],
@@ -280,15 +281,15 @@ class _TiketmuScreenState extends State<TiketmuScreen> {
     IconData statusIcon;
     switch (pesanan.statusPembayaran) {
       case StatusPembayaran.berhasil:
-        statusColor = const Color(0xFF38A169);
+        statusColor = AppColors.success;
         statusLabel = 'Pembayaran Berhasil';
         statusIcon = Icons.check_circle_outline;
       case StatusPembayaran.menunggu:
-        statusColor = const Color(0xFFD69E2E);
+        statusColor = AppColors.warning;
         statusLabel = 'Menunggu Pembayaran';
         statusIcon = Icons.access_time_outlined;
       case StatusPembayaran.gagal:
-        statusColor = const Color(0xFFE53E3E);
+        statusColor = AppColors.error;
         statusLabel = 'Pembayaran Gagal';
         statusIcon = Icons.cancel_outlined;
       case StatusPembayaran.kedaluwarsa:
@@ -343,7 +344,7 @@ class _TiketmuScreenState extends State<TiketmuScreen> {
                   style: const TextStyle(
                     fontSize: 40,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFFD69E2E),
+                    color: AppColors.warning,
                     letterSpacing: 3,
                   ),
                 ),
@@ -537,7 +538,7 @@ class _TiketmuScreenState extends State<TiketmuScreen> {
             ),
           ),
           // ── Ticket items ──────────────────────────────────────
-          const Divider(color: Color(0xFFEEEEEE), height: 1),
+          const Divider(color: AppColors.divider, height: 1),
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
             child: Column(
@@ -577,7 +578,7 @@ class _TiketmuScreenState extends State<TiketmuScreen> {
                   ],
                 ),
                 const SizedBox(height: 4),
-                const Divider(color: Color(0xFFEEEEEE)),
+                const Divider(color: AppColors.divider),
                 const SizedBox(height: 4),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -652,7 +653,7 @@ class _TearLine extends StatelessWidget {
           width: 18,
           height: 36,
           decoration: BoxDecoration(
-            color: const Color(0xFFEEEEEE),
+            color: AppColors.divider,
             borderRadius: const BorderRadius.only(
               topRight: Radius.circular(18),
               bottomRight: Radius.circular(18),
@@ -688,7 +689,7 @@ class _TearLine extends StatelessWidget {
           width: 18,
           height: 36,
           decoration: BoxDecoration(
-            color: const Color(0xFFEEEEEE),
+            color: AppColors.divider,
             borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(18),
               bottomLeft: Radius.circular(18),

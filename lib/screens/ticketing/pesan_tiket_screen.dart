@@ -6,6 +6,7 @@ import '../../services/ticketing_service.dart';
 import '../../services/midtrans_service.dart';
 import 'midtrans_snap_screen.dart';
 import 'tiketmu_screen.dart';
+import '../../theme/app_colors.dart';
 
 class PesanTiketScreen extends StatefulWidget {
   final Pertunjukan pertunjukan;
@@ -25,7 +26,7 @@ class _PesanTiketScreenState extends State<PesanTiketScreen> {
   bool _loadingJenisTiket = true;
   bool _submitting = false;
 
-  static const Color _primaryColor = Color(0xFF4B88A2);
+  static const Color _primaryColor = AppColors.primary;
 
   final _currencyFmt =
       NumberFormat.currency(locale: 'id_ID', symbol: 'Rp', decimalDigits: 0);
@@ -280,7 +281,7 @@ class _PesanTiketScreenState extends State<PesanTiketScreen> {
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 15,
-                                  color: Color(0xFF1A1A1A),
+                                  color: AppColors.textPrimary,
                                 ),
                               ),
                               const SizedBox(height: 4),
@@ -351,8 +352,8 @@ class _PesanTiketScreenState extends State<PesanTiketScreen> {
                                       horizontal: 8, vertical: 2),
                                   decoration: BoxDecoration(
                                     color: isHabis
-                                        ? const Color(0xFFE53E3E)
-                                        : const Color(0xFF38A169),
+                                        ? AppColors.error
+                                        : AppColors.success,
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Text(

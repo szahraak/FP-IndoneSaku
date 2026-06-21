@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/pertunjukan.dart';
 import '../services/ticketing_service.dart';
+import '../theme/app_colors.dart';
 import 'ticketing/pesan_tiket_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
-  static const Color _primaryColor = Color(0xFF4B88A2);
+  static const Color _primaryColor = AppColors.primary;
 
   @override
   Widget build(BuildContext context) {
@@ -133,7 +134,7 @@ class HomeScreen extends StatelessWidget {
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 15,
-                            color: Color(0xFF1A1A1A),
+                            color: AppColors.textPrimary,
                           ),
                         ),
                         const SizedBox(height: 6),

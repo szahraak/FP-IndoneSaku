@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'home_screen.dart';
+import 'homepage_screen.dart';
 import 'profile/profile_screen.dart';
 import 'enseniklopedia/enseniklopedia_screen.dart';
+import '../theme/app_colors.dart';
 
 class MainScaffold extends StatefulWidget {
   final int initialIndex;
@@ -16,7 +17,7 @@ class _MainScaffoldState extends State<MainScaffold> {
   late int _currentIndex;
 
   final List<Widget> _pages = const [
-    _HomePage(),
+    HomepageScreen(),
     EnseniklopediaScreen(),
     ProfileScreen(),
   ];
@@ -44,17 +45,6 @@ class _MainScaffoldState extends State<MainScaffold> {
         ),
       ),
     );
-  }
-}
-
-// ── Placeholder pages ────────────────────────────────────────────────────────
-
-class _HomePage extends StatelessWidget {
-  const _HomePage();
-
-  @override
-  Widget build(BuildContext context) {
-    return const HomeScreen();
   }
 }
 
@@ -135,9 +125,6 @@ class _NavButtonState extends State<_NavButton>
   late final AnimationController _ctrl;
   late final Animation<double> _scaleAnim;
 
-  static const _activeColor = Color(0xFF4B88A2);
-  static const _inactiveColor = Color(0xFFAAAAAA);
-
   @override
   void initState() {
     super.initState();
@@ -187,14 +174,15 @@ class _NavButtonState extends State<_NavButton>
                     Icon(
                       widget.item.icon,
                       size: 28,
-                      color: widget.selected ? _activeColor : _inactiveColor,
+                      color:
+                          widget.selected ? AppColors.primary : const Color(0xFFAAAAAA),
                     ),
                     const SizedBox(height: 4),
                     Container(
                       width: widget.selected ? 5 : 0,
                       height: widget.selected ? 5 : 0,
                       decoration: const BoxDecoration(
-                        color: _activeColor,
+                        color: AppColors.primary,
                         shape: BoxShape.circle,
                       ),
                     ),

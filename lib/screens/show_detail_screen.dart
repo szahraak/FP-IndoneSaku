@@ -3,7 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/pertunjukan.dart';
 import '../services/pertunjukan_service.dart';
-import 'homepage_screen.dart' show AppColors;
+import '../theme/app_colors.dart';
+import 'ticketing/pesan_tiket_screen.dart';
 
 class ShowDetailScreen extends StatefulWidget {
   final String showId;
@@ -344,10 +345,11 @@ class _ShowDetailBody extends StatelessWidget {
                     elevation: 0,
                   ),
                   onPressed: () {
-                    // TODO: navigate to booking screen
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text('Fitur pemesanan tiket segera hadir!')),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => PesanTiketScreen(pertunjukan: show),
+                      ),
                     );
                   },
                   child: Text(

@@ -3,6 +3,7 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/tiket.dart';
 import '../../services/midtrans_service.dart';
+import '../../theme/app_colors.dart';
 import '../profile/profile_screen.dart';
 import 'tiketmu_screen.dart';
 import 'rangkuman_pemesanan_screen.dart';
@@ -169,7 +170,7 @@ class _MidtransSnapScreenState extends State<MidtransSnapScreen> {
     
     _showStatusDialog(
       icon: Icons.hourglass_top_rounded,
-      iconColor: const Color(0xFFF59E0B),
+      iconColor: AppColors.warning,
       title: 'Pembayaran Belum Diterima',
       message: 'Pesanan kamu tersimpan! Kamu bisa melanjutkan pembayaran ini nanti di halaman Tiketmu sebelum batas waktu habis.',
       onOkAction: () {
@@ -199,7 +200,7 @@ class _MidtransSnapScreenState extends State<MidtransSnapScreen> {
     
     _showStatusDialog(
       icon: Icons.cancel_outlined,
-      iconColor: const Color(0xFFE53935),
+      iconColor: AppColors.error,
       title: 'Pembayaran Gagal',
       message: 'Pembayaran dibatalkan atau gagal diproses. Silakan kembali ke halaman Pesan Tiket untuk mengulang.',
       onOkAction: () {
@@ -215,7 +216,7 @@ class _MidtransSnapScreenState extends State<MidtransSnapScreen> {
       const SnackBar(
         content: Text('Pembayaran tertunda. Anda dapat melanjutkannya di halaman Tiketmu.'),
         duration: Duration(seconds: 4),
-        backgroundColor: Color(0xFF4B88A2),
+        backgroundColor: AppColors.primary,
       ),
     );
 
@@ -279,7 +280,7 @@ class _MidtransSnapScreenState extends State<MidtransSnapScreen> {
                 onOkAction();       // 2. Jalankan perintah navigasi
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4B88A2),
+                backgroundColor: AppColors.primary,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -328,7 +329,7 @@ class _MidtransSnapScreenState extends State<MidtransSnapScreen> {
                   ElevatedButton(
                     onPressed: () => Navigator.pop(ctx, true),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF4B88A2),
+                      backgroundColor: AppColors.primary,
                     ),
                     child: const Text('Ya, Tutup',
                         style: TextStyle(color: Colors.white)),
@@ -416,7 +417,7 @@ class _MidtransSnapScreenState extends State<MidtransSnapScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Pengunduhan tidak didukung. Silakan lakukan Screenshot layar ini untuk menyimpan QR Code.'),
-                      backgroundColor: Color(0xFF4B88A2),
+                      backgroundColor: AppColors.primary,
                       duration: Duration(seconds: 4),
                     ),
                   );
@@ -427,7 +428,7 @@ class _MidtransSnapScreenState extends State<MidtransSnapScreen> {
           if (_isLoading)
             const Center(
               child: CircularProgressIndicator(
-                color: Color(0xFF4B88A2),
+                color: AppColors.primary,
               ),
             ),
         ],

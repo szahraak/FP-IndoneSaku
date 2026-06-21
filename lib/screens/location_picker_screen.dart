@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'homepage_screen.dart' show AppColors;
+import '../theme/app_colors.dart';
 
 /// A result from the location picker
 class LocationResult {
