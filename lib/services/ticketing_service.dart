@@ -9,7 +9,7 @@ class TicketingService {
 
   static String get _uid => _auth.currentUser?.uid ?? '';
 
-  // ── Pertunjukan ─────────────────────────────────────────────────────
+  // ── Pertunjukan ──────────────────────────────────────────────────────────────
 
   static Stream<List<Pertunjukan>> getPertunjukanStream() {
     return _db
@@ -23,7 +23,7 @@ class TicketingService {
     });
   }
 
-  // ── Jenis Tiket ─────────────────────────────────────────────────────
+  // ── Jenis Tiket ──────────────────────────────────────────────────────────────
 
   static Future<List<JenisTiket>> getJenisTiket(String pertunjukanId) {
     return _db
@@ -34,26 +34,28 @@ class TicketingService {
         .then((snap) => snap.docs.map(JenisTiket.fromFirestore).toList());
   }
 
-  // ── User info ────────────────────────────────────────────────────────
+  // ── User Info ────────────────────────────────────────────────────────────────
 
   static Future<Map<String, String>> getCurrentUserInfo() async {
     if (_uid.isEmpty) return {'nama': 'Pengguna', 'email': ''};
-    final doc = await _db.collection('seniman').doc(_uid).get();
-    if (!doc.exists) {
-      final user = _auth.currentUser;
+    // Cek koleksi 'users' dulu (penonton & seniman ada di sini)
+    final doc = await _db.collection('users').doc(_uid).get();
+    if (doc.exists) {
+      final data = doc.data()!;
       return {
-        'nama': user?.displayName ?? 'Pengguna',
-        'email': user?.email ?? '',
+        'nama': (data['nama'] as String?) ?? 'Pengguna',
+        'email': (data['email'] as String?) ?? '',
       };
     }
-    final data = doc.data()!;
+    // Fallback ke Firebase Auth display name
+    final user = _auth.currentUser;
     return {
-      'nama': (data['nama'] as String?) ?? 'Pengguna',
-      'email': (data['email'] as String?) ?? '',
+      'nama': user?.displayName ?? 'Pengguna',
+      'email': user?.email ?? '',
     };
   }
 
-  // ── Pesanan ──────────────────────────────────────────────────────────
+  // ── Pesanan ──────────────────────────────────────────────────────────────────
 
   static Stream<List<TiketPesanan>> getTiketSayaStream() {
     if (_uid.isEmpty) return Stream.value([]);
@@ -68,6 +70,11 @@ class TicketingService {
     });
   }
 
+  /// Membuat pesanan baru di Firestore dengan status 'menunggu'.
+  ///
+  /// Pesanan dibuat lebih dulu, lalu [MidtransService.getSnapToken] dipanggil
+  /// dari [PembayaranScreen] untuk mendapatkan Snap token. Ini memastikan
+  /// order ID di Midtrans selalu sinkron dengan ID dokumen Firestore.
   static Future<TiketPesanan> buatPesanan({
     required String pertunjukanId,
     required String judulPertunjukan,
@@ -80,6 +87,7 @@ class TicketingService {
     required double totalHarga,
   }) async {
     final ref = _db.collection('pesanan').doc();
+    final now = DateTime.now();
     final pesanan = TiketPesanan(
       id: ref.id,
       penggunaUid: _uid,
@@ -92,34 +100,18 @@ class TicketingService {
       emailPemesan: emailPemesan,
       items: items,
       totalHarga: totalHarga,
+      batasWaktuPembayaran: now.add(const Duration(hours: 24)),
       qrCodeData: 'INDONESAKU-${ref.id}-$_uid',
+      // midtransOrderId diisi setelah snap token berhasil didapat
+      midtransOrderId: ref.id,
     );
     await ref.set(pesanan.toMap());
     return pesanan;
   }
 
-  static Future<TiketPesanan> konfirmasiPembayaran({
-    required TiketPesanan pesanan,
-    required MetodePembayaran metode,
-    String? namaAkun,
-  }) async {
-    final namaAkunFinal = namaAkun ?? metode.label;
-    final nomorPembayaran =
-        '11988${DateTime.now().millisecondsSinceEpoch % 10000000000}';
-    await _db.collection('pesanan').doc(pesanan.id).update({
-      'statusPembayaran': StatusPembayaran.berhasil.name,
-      'statusPesanan': StatusPesanan.dikonfirmasi.name,
-      'metodePembayaran': metode.name,
-      'namaAkunPembayaran': namaAkunFinal,
-      'nomorPembayaran': nomorPembayaran,
-    });
-    pesanan.statusPembayaran = StatusPembayaran.berhasil;
-    pesanan.statusPesanan = StatusPesanan.dikonfirmasi;
-    pesanan.metodePembayaran = metode;
-    pesanan.namaAkunPembayaran = namaAkunFinal;
-    return pesanan;
-  }
-
+  /// Batalkan pesanan — update status di Firestore.
+  /// Jika sudah dibayar via Midtrans, refund harus dilakukan manual
+  /// dari dashboard Midtrans Sandbox.
   static Future<void> batalkanPesanan(String pesananId) {
     return _db.collection('pesanan').doc(pesananId).update({
       'statusPesanan': StatusPesanan.dibatalkan.name,

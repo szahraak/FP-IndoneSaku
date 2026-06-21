@@ -3,7 +3,9 @@ import 'package:intl/intl.dart';
 import '../../models/pertunjukan.dart';
 import '../../models/tiket.dart';
 import '../../services/ticketing_service.dart';
-import 'pembayaran_screen.dart';
+import '../../services/midtrans_service.dart';
+import 'midtrans_snap_screen.dart';
+import 'tiketmu_screen.dart';
 
 class PesanTiketScreen extends StatefulWidget {
   final Pertunjukan pertunjukan;
@@ -82,17 +84,76 @@ class _PesanTiketScreenState extends State<PesanTiketScreen> {
     });
   }
 
+  Future<bool> _showSandboxWarning() async {
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        backgroundColor: Colors.white,
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
+            SizedBox(width: 8),
+            Text('Mode Sandbox', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: ListBody(
+            children: [
+              const Text('Anda sedang berada di lingkungan pengujian (Sandbox).'),
+              const SizedBox(height: 12),
+              const Text(
+                '⚠️ JANGAN gunakan uang atau rekening asli Anda untuk melakukan pembayaran pada halaman selanjutnya.',
+                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
+              ),
+              const SizedBox(height: 16),
+              const Text('Gunakan simulator resmi Midtrans untuk menyimulasikan pembayaran:', style: TextStyle(fontSize: 13)),
+              const SizedBox(height: 4),
+              SelectableText(
+                'https://simulator.sandbox.midtrans.com/',
+                style: TextStyle(color: Colors.blue, fontSize: 13, decoration: TextDecoration.underline),
+              ),
+              const SizedBox(height: 12),
+              const Text('Dokumentasi testing:', style: TextStyle(fontSize: 13)),
+              const SizedBox(height: 4),
+              SelectableText(
+                'https://docs.midtrans.com/docs/testing-payment-on-sandbox',
+                style: TextStyle(color: Colors.blue, fontSize: 13, decoration: TextDecoration.underline),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Batal', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(backgroundColor: _primaryColor),
+            child: const Text('Mengerti', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
+  }
+
   void _onTambahkan() async {
     if (_totalItems == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Pilih minimal 1 tiket terlebih dahulu.'),
-        ),
+        const SnackBar(content: Text('Pilih minimal 1 tiket terlebih dahulu.')),
       );
       return;
     }
 
+    final bool confirm = await _showSandboxWarning();
+    if (!confirm) return;
+
     setState(() => _submitting = true);
+    TiketPesanan? pesanan; // Deklarasi di luar try untuk handle error fallback
+
     try {
       final items = <ItemPesanan>[];
       for (final tiket in _jenisTiket) {
@@ -107,7 +168,8 @@ class _PesanTiketScreenState extends State<PesanTiketScreen> {
         }
       }
 
-      final pesanan = await TicketingService.buatPesanan(
+      // 1. Buat pesanan di Firestore
+      pesanan = await TicketingService.buatPesanan(
         pertunjukanId: widget.pertunjukan.id,
         judulPertunjukan: widget.pertunjukan.judul,
         posterUrl: widget.pertunjukan.posterUrl,
@@ -119,18 +181,35 @@ class _PesanTiketScreenState extends State<PesanTiketScreen> {
         totalHarga: _totalHarga,
       );
 
+      // 2. Langsung dapatkan Snap Token dari Midtrans
+      final snapResult = await MidtransService.getSnapToken(pesanan);
+
       if (!mounted) return;
+      
+      // 3. Arahkan ke Midtrans Snap Screen (Gunakan pushReplacement agar tidak bisa di-back)
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => PembayaranScreen(pesanan: pesanan),
+          builder: (_) => MidtransSnapScreen(
+            pesanan: pesanan!,
+            redirectUrl: snapResult.redirectUrl,
+            fromTiketmu: false,
+          ),
         ),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal membuat pesanan: $e')),
+        SnackBar(content: Text('Terjadi kesalahan: $e')),
       );
+      // Jika pesanan terlanjur terbuat tapi Snap gagal dimuat (misal koneksi putus),
+      // lemparkan ke TiketmuScreen agar bisa dilanjutkan nanti.
+      if (pesanan != null) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => TiketmuScreen(pesanan: pesanan!)),
+        );
+      }
     } finally {
       if (mounted) setState(() => _submitting = false);
     }

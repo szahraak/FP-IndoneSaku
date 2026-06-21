@@ -3,10 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'firebase_options.dart';
 import 'screens/main_scaffold.dart';
+import 'screens/auth/login.dart';
+import 'screens/auth/forgot_password.dart';
+import 'screens/auth/register.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,16 +18,6 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // Try to sign in anonymously, but don't crash if it fails
-  if (FirebaseAuth.instance.currentUser == null) {
-    try {
-      await FirebaseAuth.instance.signInAnonymously();
-    } catch (e) {
-      debugPrint('⚠️ Anonymous auth failed (non-fatal): $e');
-      // Continue anyway - app can work with anonymous/no auth
-    }
-  }
-  
   await initializeDateFormatting('id_ID', null);
   SystemChrome.setEnabledSystemUIMode(
     SystemUiMode.manual,
@@ -76,8 +70,53 @@ class _IndoneSakuAppState extends State<IndoneSakuApp> {
         useMaterial3: true,
         textTheme: GoogleFonts.poppinsTextTheme(),
         brightness: Brightness.light,
+        scaffoldBackgroundColor: const Color(0xFFF7F3EE),
       ),
-      home: const MainScaffold(),
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('id', 'ID'),
+        Locale('en', 'US'),
+      ],
+      routes: {
+        '/login': (context) => const LoginScreen(),
+        '/forgot-password': (context) => const ForgotPasswordScreen(),
+        '/register': (context) => const RegisterScreen(),
+        '/home': (context) => const MainScaffold(),
+      },
+      home: const AuthGate(),
+    );
+  }
+}
+
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            backgroundColor: Colors.white,
+            body: Center(
+              child: CircularProgressIndicator(
+                color: Color(0xFF4A7FA5),
+              ),
+            ),
+          );
+        }
+
+        if (!snapshot.hasData || snapshot.data == null) {
+          return const LoginScreen();
+        }
+
+        return const MainScaffold();
+      },
     );
   }
 }
