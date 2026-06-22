@@ -194,7 +194,7 @@ class _ShowDetailBody extends StatelessWidget {
                       _infoChip(Icons.location_city_outlined, show.kota,
                           AppColors.secondary),
                       _infoChip(Icons.confirmation_number_outlined,
-                          '${show.stokTiket} tiket tersisa', Colors.green),
+                          '${show.totalStok} tiket tersisa', Colors.green),
                     ],
                   ),
                   const SizedBox(height: 20),
@@ -330,7 +330,7 @@ class _ShowDetailBody extends StatelessWidget {
       ),
 
       // ── Buy ticket / book button ─────────────────────────────────────────
-      bottomNavigationBar: show.isUpcoming && show.stokTiket > 0
+      bottomNavigationBar: show.isUpcoming && show.totalStok > 0
           ? SafeArea(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
@@ -353,7 +353,7 @@ class _ShowDetailBody extends StatelessWidget {
                     );
                   },
                   child: Text(
-                    show.harga == 0
+                    show.hargaTermurah == 0
                         ? 'Daftar Sekarang (Gratis)'
                         : 'Pesan Tiket — ${show.formattedHarga}',
                     style: const TextStyle(

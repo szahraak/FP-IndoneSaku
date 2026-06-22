@@ -6,18 +6,25 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'firebase_options.dart';
 import 'theme/app_colors.dart';
 import 'screens/main_scaffold.dart';
 import 'screens/auth/login.dart';
 import 'screens/auth/forgot_password.dart';
 import 'screens/auth/register.dart';
+import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await dotenv.load(fileName: ".env");
+  
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  await NotificationService.initialize();
 
   await initializeDateFormatting('id_ID', null);
   SystemChrome.setEnabledSystemUIMode(

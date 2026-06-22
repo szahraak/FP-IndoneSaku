@@ -8,7 +8,8 @@ class Seniman {
   final String tipeAkun;
   final List<String> preferensiSeni;
   final Timestamp dibuatPada;
-  final String? cvPortofolioUrl;
+  final String? cvUrl;
+  final String? portofolioUrl;
 
   // Extra fields for UI display
   final int? jumlahPertunjukan;
@@ -22,7 +23,8 @@ class Seniman {
     required this.tipeAkun,
     required this.preferensiSeni,
     required this.dibuatPada,
-    this.cvPortofolioUrl,
+    this.cvUrl,
+    this.portofolioUrl,
     this.jumlahPertunjukan,
     this.rating,
   });
@@ -37,7 +39,8 @@ class Seniman {
       tipeAkun: data['tipeAkun'] ?? 'seniman',
       preferensiSeni: List<String>.from(data['preferensiSeni'] ?? []),
       dibuatPada: data['dibuatPada'] ?? Timestamp.now(),
-      cvPortofolioUrl: data['cvPortofolioUrl'],
+      cvUrl: data['cvUrl'],
+      portofolioUrl: data['portofolioUrl'],
       jumlahPertunjukan: data['jumlahPertunjukan'],
       rating: (data['rating'] as num?)?.toDouble(),
     );

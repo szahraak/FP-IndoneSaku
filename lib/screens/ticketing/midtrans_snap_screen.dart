@@ -3,19 +3,12 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/tiket.dart';
 import '../../services/midtrans_service.dart';
+import '../../services/notification_service.dart';
 import '../../theme/app_colors.dart';
-import '../profile/profile_screen.dart';
+import '../main_scaffold.dart';
 import 'tiketmu_screen.dart';
 import 'rangkuman_pemesanan_screen.dart';
 
-/// Layar InAppWebView untuk menampilkan halaman pembayaran Midtrans Snap.
-///
-/// Alur:
-/// 1. Snap redirectUrl dimuat di WebView.
-/// 2. Saat Midtrans selesai, WebView diarahkan ke salah satu callback URL
-///    yang berformat: https://fp-indonesaku.web.app/payment/{finish|pending|error|unfinish}
-/// 3. WebView mengintersep URL tersebut, mencegah navigasi nyata, lalu
-///    memproses hasil pembayaran.
 class MidtransSnapScreen extends StatefulWidget {
   final TiketPesanan pesanan;
   final String redirectUrl;
@@ -35,13 +28,10 @@ class MidtransSnapScreen extends StatefulWidget {
 class _MidtransSnapScreenState extends State<MidtransSnapScreen> {
   InAppWebViewController? webViewController;
   bool _isLoading = true;
-  bool _isHandled = false; // mencegah double-handle callback
+  bool _isHandled = false;
 
-  // Base URL yang dipakai sebagai callback — WebView akan mengintersep path ini.
   static const String _callbackBase = 'https://fp-indonesaku.web.app/payment';
 
-  // ── Helper Get Metode Pembayaran ────────────────────────────────────────────────────────
-  
   MetodePembayaran _mapMidtransPaymentToEnum(String paymentType) {
     switch (paymentType) {
       case 'credit_card':
@@ -61,24 +51,21 @@ class _MidtransSnapScreenState extends State<MidtransSnapScreen> {
         return MetodePembayaran.transferBank;
       case 'gopay':
       case 'shopeepay':
-      case 'qris': // E-wallet dan QRIS sering dianggap serupa di sini
-        return MetodePembayaran.qris; // Atau MetodePembayaran.dompetDigital tergantung preferensimu
+      case 'qris':
+        return MetodePembayaran.qris;
       case 'cstore':
       case 'akulaku':
       default:
-        // Gunakan nilai default jika tidak dikenali (bisa disesuaikan)
         return MetodePembayaran.online; 
     }
   }
-
-  // ── Callback Handler ────────────────────────────────────────────────────────
 
   void _handleCallbackUrl(String url) {
     if (_isHandled) return;
     _isHandled = true;
 
     final uri = Uri.parse(url);
-    final path = uri.path; // e.g. /payment/finish
+    final path = uri.path;
     final params = uri.queryParameters;
 
     final transactionStatus = params['transaction_status'] ?? '';
@@ -96,14 +83,11 @@ class _MidtransSnapScreenState extends State<MidtransSnapScreen> {
     } else if (path.contains('pending')) {
       _onPending(paymentType: paymentType);
     } else if (path.contains('cancel') || path.contains('unfinish')) {
-      // Jika user menekan tombol batal/kembali dari UI Midtrans
       _onTertunda();
     } else if (path.contains('error')) {
       _onGagal();
     }
   }
-
-  // ── Outcome Handlers ────────────────────────────────────────────────────────
 
   Future<void> _onBerhasil({
     required String paymentType,
@@ -121,7 +105,7 @@ class _MidtransSnapScreenState extends State<MidtransSnapScreen> {
         if (doc.exists && doc.data()!.containsKey('midtransPaymentType')) {
           final webhookPaymentType = doc.data()!['midtransPaymentType'] as String?;
           if (webhookPaymentType != null && webhookPaymentType != 'unknown') {
-            realPaymentType = webhookPaymentType; // Dapatkan tipe asli (misal: 'credit_card')
+            realPaymentType = webhookPaymentType;
           }
         }
       } catch (_) {}
@@ -133,6 +117,19 @@ class _MidtransSnapScreenState extends State<MidtransSnapScreen> {
         paymentType: realPaymentType.isEmpty ? 'unknown' : realPaymentType,
         transactionId: transactionId.isEmpty ? widget.pesanan.id : transactionId,
       );
+
+      // --- LOGIKA NOTIFIKASI SUKSES ---
+      await NotificationService.cancelPaymentReminders(widget.pesanan.id);
+      await NotificationService.showPaymentSuccessNotification(
+         widget.pesanan.id, 
+         widget.pesanan.judulPertunjukan
+      );
+      await NotificationService.schedulePertunjukanReminders(
+        pesananId: widget.pesanan.id,
+        judul: widget.pesanan.judulPertunjukan,
+        tanggalPertunjukan: widget.pesanan.tanggalPertunjukan,
+      );
+
     } catch (_) {}
 
     if (!mounted) return;
@@ -161,6 +158,15 @@ class _MidtransSnapScreenState extends State<MidtransSnapScreen> {
         pesananId: widget.pesanan.id,
         paymentType: paymentType.isEmpty ? 'unknown' : paymentType,
       );
+
+      // --- LOGIKA NOTIFIKASI PENDING ---
+      await NotificationService.showPendingPaymentNotification(widget.pesanan.judulPertunjukan);
+      await NotificationService.schedulePaymentExpiryReminder(
+        pesananId: widget.pesanan.id,
+        judul: widget.pesanan.judulPertunjukan,
+        batasWaktu: widget.pesanan.batasWaktuPembayaran,
+      );
+
     } catch (_) {}
 
     if (!mounted) return;
@@ -179,8 +185,9 @@ class _MidtransSnapScreenState extends State<MidtransSnapScreen> {
         } else {
           Navigator.pushAndRemoveUntil(
             context,
-            MaterialPageRoute(builder: (_) => const ProfileScreen()),
-            (route) => route.isFirst,
+            MaterialPageRoute(
+                builder: (_) => const MainScaffold(initialIndex: 2)),
+            (route) => false, 
           );
           Navigator.push(
             context,
@@ -204,12 +211,20 @@ class _MidtransSnapScreenState extends State<MidtransSnapScreen> {
       title: 'Pembayaran Gagal',
       message: 'Pembayaran dibatalkan atau gagal diproses. Silakan kembali ke halaman Pesan Tiket untuk mengulang.',
       onOkAction: () {
-        Navigator.pop(context); // Kembali ke halaman Pesan Tiket
+        Navigator.pop(context);
       },
     );
   }
 
-  void _onTertunda() {
+  Future<void> _onTertunda() async {
+    // --- LOGIKA NOTIFIKASI PENDING ---
+    await NotificationService.showPendingPaymentNotification(widget.pesanan.judulPertunjukan);
+    await NotificationService.schedulePaymentExpiryReminder(
+      pesananId: widget.pesanan.id,
+      judul: widget.pesanan.judulPertunjukan,
+      batasWaktu: widget.pesanan.batasWaktuPembayaran,
+    );
+
     if (!mounted) return;
     
     ScaffoldMessenger.of(context).showSnackBar(
@@ -225,8 +240,9 @@ class _MidtransSnapScreenState extends State<MidtransSnapScreen> {
     } else {
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (_) => const ProfileScreen()),
-        (route) => route.isFirst,
+        MaterialPageRoute(
+            builder: (_) => const MainScaffold(initialIndex: 2)),
+        (route) => false, 
       );
       Navigator.push(
         context,
@@ -234,8 +250,6 @@ class _MidtransSnapScreenState extends State<MidtransSnapScreen> {
       );
     }
   }
-
-  // ── Dialog ──────────────────────────────────────────────────────────────────
 
   void _showStatusDialog({
     required IconData icon,
@@ -257,11 +271,7 @@ class _MidtransSnapScreenState extends State<MidtransSnapScreen> {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-                color: Colors.black,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.black),
             ),
           ],
         ),
@@ -276,31 +286,21 @@ class _MidtransSnapScreenState extends State<MidtransSnapScreen> {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {
-                Navigator.pop(ctx); // 1. Tutup popup dialognya
-                onOkAction();       // 2. Jalankan perintah navigasi
+                Navigator.pop(ctx);
+                onOkAction();
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
-              child: const Text(
-                'OK',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              child: const Text('OK', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             ),
           ),
         ],
       ),
     );
   }
-
-  // ── Build ────────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -316,23 +316,15 @@ class _MidtransSnapScreenState extends State<MidtransSnapScreen> {
             final confirm = await showDialog<bool>(
               context: context,
               builder: (ctx) => AlertDialog(
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 title: const Text('Tutup Halaman?'),
-                content: const Text(
-                    'Anda belum menyelesaikan pembayaran. Anda masih dapat melanjutkannya nanti di halaman Tiketmu sebelum waktu habis.'),
+                content: const Text('Anda belum menyelesaikan pembayaran. Anda masih dapat melanjutkannya nanti di halaman Tiketmu sebelum waktu habis.'),
                 actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(ctx, false),
-                    child: const Text('Batal'),
-                  ),
+                  TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')),
                   ElevatedButton(
                     onPressed: () => Navigator.pop(ctx, true),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                    ),
-                    child: const Text('Ya, Tutup',
-                        style: TextStyle(color: Colors.white)),
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+                    child: const Text('Ya, Tutup', style: TextStyle(color: Colors.white)),
                   ),
                 ],
               ),
@@ -341,7 +333,14 @@ class _MidtransSnapScreenState extends State<MidtransSnapScreen> {
             if (confirm == true && mounted) {
               if (!_isHandled) {
                 _isHandled = true;
-                // Kita tidak lagi memanggil API Gagal, agar status tetap "menunggu"
+                
+                // --- LOGIKA NOTIFIKASI PENDING SAAT TUTUP SNAP ---
+                await NotificationService.showPendingPaymentNotification(widget.pesanan.judulPertunjukan);
+                await NotificationService.schedulePaymentExpiryReminder(
+                  pesananId: widget.pesanan.id,
+                  judul: widget.pesanan.judulPertunjukan,
+                  batasWaktu: widget.pesanan.batasWaktuPembayaran,
+                );
               }
               if (!context.mounted) return;
               
@@ -350,8 +349,9 @@ class _MidtransSnapScreenState extends State<MidtransSnapScreen> {
               } else {
                 Navigator.pushAndRemoveUntil(
                   context,
-                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
-                  (route) => route.isFirst,
+                  MaterialPageRoute(
+                      builder: (_) => const MainScaffold(initialIndex: 2)),
+                  (route) => false, 
                 );
                 Navigator.push(
                   context,
@@ -361,14 +361,7 @@ class _MidtransSnapScreenState extends State<MidtransSnapScreen> {
             }
           },
         ),
-        title: const Text(
-          'Pembayaran Midtrans',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
-        ),
+        title: const Text('Pembayaran Midtrans', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16)),
         centerTitle: true,
       ),
       body: Stack(
@@ -377,41 +370,27 @@ class _MidtransSnapScreenState extends State<MidtransSnapScreen> {
             initialUrlRequest: URLRequest(url: WebUri(widget.redirectUrl)),
             initialSettings: InAppWebViewSettings(
               javaScriptEnabled: true,
-              useShouldOverrideUrlLoading: true, // Wajib diaktifkan untuk intercept
-              useOnDownloadStart: true,          // Deteksi tombol download
+              useShouldOverrideUrlLoading: true,
+              useOnDownloadStart: true,
               allowFileAccessFromFileURLs: true,
               allowUniversalAccessFromFileURLs: true,
             ),
-            onWebViewCreated: (controller) {
-              webViewController = controller;
-            },
-            onLoadStart: (controller, url) {
-              if (mounted) setState(() => _isLoading = true);
-            },
-            onLoadStop: (controller, url) {
-              if (mounted) setState(() => _isLoading = false);
-            },
+            onWebViewCreated: (controller) => webViewController = controller,
+            onLoadStart: (controller, url) { if (mounted) setState(() => _isLoading = true); },
+            onLoadStop: (controller, url) { if (mounted) setState(() => _isLoading = false); },
             shouldOverrideUrlLoading: (controller, navigationAction) async {
               final url = navigationAction.request.url.toString();
-
-              // 1. Intersep Callback Midtrans kita
               if (url.startsWith(_callbackBase)) {
                 _handleCallbackUrl(url);
                 return NavigationActionPolicy.CANCEL;
               }
-
-              // 2. Izinkan Deep Link (Membuka aplikasi e-wallet luar seperti Gojek/Shopee)
               if (!url.startsWith('http') && !url.startsWith('https')) {
-                // Di masa depan bisa tambahkan package url_launcher di sini 
-                // if (await canLaunchUrl(Uri.parse(url))) await launchUrl(...);
                 return NavigationActionPolicy.CANCEL; 
               }
-
               return NavigationActionPolicy.ALLOW;
             },
             onDownloadStartRequest: (controller, downloadRequest) async {
               final url = downloadRequest.url.toString();
-              // Jika user menekan tombol Download QRIS
               if (url.startsWith('blob:') || url.startsWith('data:')) {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -425,12 +404,7 @@ class _MidtransSnapScreenState extends State<MidtransSnapScreen> {
               }
             },
           ),
-          if (_isLoading)
-            const Center(
-              child: CircularProgressIndicator(
-                color: AppColors.primary,
-              ),
-            ),
+          if (_isLoading) const Center(child: CircularProgressIndicator(color: AppColors.primary)),
         ],
       ),
     );

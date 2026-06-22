@@ -1,17 +1,21 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../theme/app_colors.dart';
 
 /// A result from the location picker
 class LocationResult {
   final String description;
+  final String cityName;
   final double latitude;
   final double longitude;
 
   const LocationResult({
     required this.description,
+    this.cityName = '',
     required this.latitude,
     required this.longitude,
   });
@@ -29,18 +33,26 @@ class LocationPickerScreen extends StatefulWidget {
 }
 
 class _LocationPickerScreenState extends State<LocationPickerScreen> {
-  // Replace with your actual Google Maps API key
-  static const String _apiKey = 'YOUR_GOOGLE_MAPS_API_KEY';
+  static final String _apiKey = dotenv.env['GOOGLE_MAPS_API_KEY'] ?? '';
 
   final _searchController = TextEditingController();
   List<_PlaceSuggestion> _suggestions = [];
   bool _searching = false;
   String? _errorMsg;
+  Timer? _debounce;
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _onSearchChanged(String query) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      _searchPlaces(query);
+    });
   }
 
   Future<void> _searchPlaces(String query) async {
@@ -65,6 +77,9 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
       );
 
       final response = await http.get(url);
+
+      if (!mounted) return;
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
         final predictions = data['predictions'] as List<dynamic>;
@@ -98,27 +113,48 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
       final url = Uri.parse(
         'https://maps.googleapis.com/maps/api/place/details/json'
         '?place_id=${suggestion.placeId}'
-        '&fields=geometry,formatted_address'
+        '&fields=geometry,formatted_address,address_components'
         '&key=$_apiKey',
       );
 
       final response = await http.get(url);
+      
+      if (!mounted) return;
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
         final result = data['result'] as Map<String, dynamic>;
         final location =
             result['geometry']['location'] as Map<String, dynamic>;
 
+        String extractedCity = '';
+        if (result['address_components'] != null) {
+          final components = result['address_components'] as List<dynamic>;
+          for (var component in components) {
+            final types = component['types'] as List<dynamic>;
+            // administrative_area_level_2 adalah Kota/Kabupaten di Indonesia
+            if (types.contains('administrative_area_level_2') || types.contains('locality')) {
+              extractedCity = component['long_name'] as String;
+              
+              if (extractedCity.startsWith('Kota ')) {
+                extractedCity = extractedCity.replaceFirst('Kota ', '');
+              } else if (extractedCity.startsWith('Kabupaten ')) {
+                extractedCity = extractedCity.replaceFirst('Kabupaten ', '');
+              }
+              break; 
+            }
+          }
+        }
+
         final locationResult = LocationResult(
           description: result['formatted_address'] as String? ??
               suggestion.description,
           latitude: (location['lat'] as num).toDouble(),
           longitude: (location['lng'] as num).toDouble(),
+          cityName: extractedCity,
         );
 
-        if (mounted) {
-          Navigator.pop(context, locationResult);
-        }
+        Navigator.pop(context, locationResult);
       } else {
         setState(() {
           _errorMsg = 'Gagal mendapatkan detail lokasi';
@@ -178,7 +214,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               ),
-              onChanged: _searchPlaces,
+              onChanged: _onSearchChanged,
             ),
           ),
 

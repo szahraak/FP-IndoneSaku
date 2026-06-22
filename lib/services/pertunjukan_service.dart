@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/pertunjukan.dart';
+import '../models/tiket.dart'; // TAMBAHKAN IMPORT INI
 
 class PertunjukanService {
   static final _db = FirebaseFirestore.instance;
@@ -17,11 +18,16 @@ class PertunjukanService {
     required String kota,
     GeoPoint? lokasi,
     required Timestamp tanggal,
-    required num harga,
-    required num stokTiket,
+    required List<JenisTiket> daftarTiket,
   }) async {
     final uid = _auth.currentUser?.uid;
     if (uid == null) throw Exception('User tidak login');
+
+    // Cari harga termurah (untuk ditampilkan di Homepage)
+    double hargaTermurah = 0;
+    if (daftarTiket.isNotEmpty) {
+      hargaTermurah = daftarTiket.map((t) => t.harga).reduce((a, b) => a < b ? a : b);
+    }
 
     final ref = await _db.collection(_col).add({
       'seniman_uid': uid,
@@ -33,15 +39,20 @@ class PertunjukanService {
       'kota': kota,
       'lokasi': lokasi,
       'tanggal': tanggal,
-      'harga': harga,
-      'stokTiket': stokTiket,
+      'hargaTermurah': hargaTermurah,
+      'daftarTiket': daftarTiket.map((t) => {
+        'id': t.id,
+        'nama': t.nama,
+        'harga': t.harga,
+        'stok': t.stok,
+        'deskripsi': t.deskripsi,
+      }).toList(),
       'status': 'aktif',
       'dibuatPada': FieldValue.serverTimestamp(),
       'jumlahDipesan': 0,
       'rating': null,
     });
 
-    // Increment artist's show count
     await _db.collection('users').doc(uid).update({
       'jumlahPertunjukan': FieldValue.increment(1),
     });
@@ -75,7 +86,7 @@ class PertunjukanService {
     String? kategori,
     String? kota,
     String? search,
-    String sortBy = 'tanggal', // 'tanggal' | 'harga' | 'jumlahDipesan'
+    String sortBy = 'tanggal',
     int limit = 20,
     DocumentSnapshot? lastDoc,
   }) async {
@@ -92,15 +103,11 @@ class PertunjukanService {
     }
 
     q = q.orderBy('tanggal').limit(limit);
-
-    if (lastDoc != null) {
-      q = q.startAfterDocument(lastDoc);
-    }
+    if (lastDoc != null) q = q.startAfterDocument(lastDoc);
 
     final snap = await q.get();
     var results = snap.docs.map((d) => Pertunjukan.fromFirestore(d)).toList();
 
-    // Client-side search filter (Firestore doesn't support full-text search)
     if (search != null && search.isNotEmpty) {
       final lower = search.toLowerCase();
       results = results
@@ -110,7 +117,6 @@ class PertunjukanService {
               p.kota.toLowerCase().contains(lower))
           .toList();
     }
-
     return results;
   }
 
@@ -125,8 +131,7 @@ class PertunjukanService {
     String? kota,
     GeoPoint? lokasi,
     Timestamp? tanggal,
-    num? harga,
-    num? stokTiket,
+    List<JenisTiket>? daftarTiket,
     String? status,
   }) async {
     final uid = _auth.currentUser?.uid;
@@ -140,33 +145,41 @@ class PertunjukanService {
     if (kategori != null) updates['kategori'] = kategori;
     if (kota != null) updates['kota'] = kota;
     if (lokasi != null) updates['lokasi'] = lokasi;
-    if (tanggal != null) updates['tanggal'] = tanggal;
-    if (harga != null) updates['harga'] = harga;
-    if (stokTiket != null) updates['stokTiket'] = stokTiket;
     if (status != null) updates['status'] = status;
+    if (tanggal != null) updates['tanggal'] = tanggal;
+    
+    if (daftarTiket != null) {
+      double hargaTermurah = 0;
+      if (daftarTiket.isNotEmpty) {
+        hargaTermurah = daftarTiket.map((t) => t.harga).reduce((a, b) => a < b ? a : b);
+      }
+      updates['hargaTermurah'] = hargaTermurah;
+      updates['daftarTiket'] = daftarTiket.map((t) => {
+        'id': t.id,
+        'nama': t.nama,
+        'harga': t.harga,
+        'stok': t.stok,
+        'deskripsi': t.deskripsi,
+      }).toList();
+    }
 
     await _db.collection(_col).doc(id).update(updates);
   }
 
-  // ── DELETE (soft — set status to 'dibatalkan') ────────────────────────────
+  // ── CANCEL & HARD DELETE ──────────────────────────────────────────────────
   static Future<void> cancel(String id) async {
     final uid = _auth.currentUser?.uid;
     if (uid == null) throw Exception('User tidak login');
-
     await _db.collection(_col).doc(id).update({'status': 'dibatalkan'});
-
     await _db.collection('users').doc(uid).update({
       'jumlahPertunjukan': FieldValue.increment(-1),
     });
   }
 
-  // ── HARD DELETE ───────────────────────────────────────────────────────────
   static Future<void> hardDelete(String id) async {
     final uid = _auth.currentUser?.uid;
     if (uid == null) throw Exception('User tidak login');
-
     await _db.collection(_col).doc(id).delete();
-
     await _db.collection('users').doc(uid).update({
       'jumlahPertunjukan': FieldValue.increment(-1),
     });

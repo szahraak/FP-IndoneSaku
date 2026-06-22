@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -5,6 +6,7 @@ import '../models/pertunjukan.dart';
 import '../models/seniman.dart';
 import 'show_detail_screen.dart';
 import 'browse_shows_screen.dart';
+import 'main_scaffold.dart';
 import '../theme/app_colors.dart';
 
 // ─── Homepage Screen ──────────────────────────────────────────────────────────
@@ -26,12 +28,21 @@ class _HomepageScreenState extends State<HomepageScreen> {
 
   bool _isLoading = true;
   String _userName = '';
+  String _fotoUrl = '';
   List<String> _userPreferensi = [];
+
+  StreamSubscription<DocumentSnapshot>? _userSubscription;
 
   @override
   void initState() {
     super.initState();
     _loadData();
+  }
+
+  @override
+  void dispose() {
+    _userSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -53,8 +64,20 @@ class _HomepageScreenState extends State<HomepageScreen> {
       if (doc.exists) {
         final data = doc.data()!;
         _userName = data['nama'] ?? '';
+        _fotoUrl = data['fotoUrl'] ?? '';
         _userPreferensi = List<String>.from(data['preferensiSeni'] ?? []);
       }
+
+      _userSubscription = _firestore.collection('users').doc(user.uid).snapshots().listen((snapshot) {
+        if (snapshot.exists && mounted) {
+          final data = snapshot.data()!;
+          setState(() {
+            _userName = data['nama'] ?? '';
+            _fotoUrl = data['fotoUrl'] ?? '';
+          });
+        }
+      });
+
       await _loadRecommendedShows();
     } catch (e) {
       debugPrint('Error loading user data: $e');
@@ -131,8 +154,7 @@ class _HomepageScreenState extends State<HomepageScreen> {
   Future<void> _loadRecommendedArtists() async {
     try {
       final snapshot = await _firestore
-          .collection('users')
-          .where('tipeAkun', isEqualTo: 'seniman')
+          .collection('seniman')
           .orderBy('jumlahPertunjukan', descending: true)
           .limit(10)
           .get();
@@ -184,8 +206,6 @@ class _HomepageScreenState extends State<HomepageScreen> {
 
   // ─── App Bar ──────────────────────────────────────────────────────────────
   Widget _buildSliverAppBar() {
-    final user = _auth.currentUser;
-
     return SliverAppBar(
       expandedHeight: 120,
       floating: true,
@@ -276,15 +296,20 @@ class _HomepageScreenState extends State<HomepageScreen> {
                   const SizedBox(width: 4),
                   GestureDetector(
                     onTap: () {
-                      // Navigate to profile
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const MainScaffold(initialIndex: 2)),
+                        (route) => false, 
+                      );
                     },
                     child: CircleAvatar(
                       radius: 18,
                       backgroundColor: AppColors.primary,
-                      backgroundImage: user?.photoURL != null
-                          ? NetworkImage(user!.photoURL!)
+                      backgroundImage: _fotoUrl.isNotEmpty
+                          ? NetworkImage(_fotoUrl)
                           : null,
-                      child: user?.photoURL == null
+                      child: _fotoUrl.isEmpty
                           ? Text(
                               _userName.isNotEmpty
                                   ? _userName[0].toUpperCase()

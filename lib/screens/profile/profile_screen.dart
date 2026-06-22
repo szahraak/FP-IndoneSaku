@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -6,8 +7,8 @@ import '../../theme/app_colors.dart';
 import '../../models/tiket.dart';
 import '../../services/ticketing_service.dart';
 import '../ticketing/tiketmu_screen.dart';
-import '../../services/auth_service.dart';
 import '../my_shows_screen.dart';
+import 'settings_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -21,6 +22,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String _tipeAkun = 'penonton';
   String _userName = '';
   String _userEmail = '';
+  String _fotoUrl = '';
+
+  StreamSubscription<DocumentSnapshot>? _userSubscription;
 
   static const _filters = [
     ('aktif', 'Aktif'),
@@ -33,6 +37,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     _loadUserProfile();
+  }
+
+  @override
+  void dispose() {
+    _userSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadUserProfile() async {
@@ -48,12 +58,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _tipeAkun = doc.data()?['tipeAkun'] ?? 'penonton';
           _userName = doc.data()?['nama'] ?? '';
           _userEmail = doc.data()?['email'] ?? user.email ?? '';
+          _fotoUrl = doc.data()?['fotoUrl'] ?? ''; // Ambil fotoUrl
         });
       } else if (mounted) {
         setState(() {
           _userEmail = user.email ?? '';
         });
       }
+
+      // Pasang Listener Real-time
+      _userSubscription = FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .snapshots()
+          .listen((snapshot) {
+        if (snapshot.exists && mounted) {
+          setState(() {
+            _userName = snapshot.data()?['nama'] ?? '';
+            _fotoUrl = snapshot.data()?['fotoUrl'] ?? '';
+          });
+        }
+      });
     } catch (_) {}
   }
 
@@ -114,42 +139,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  void _logout() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Keluar Akun?'),
-        content: const Text('Apakah kamu yakin ingin keluar dari aplikasi?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Batal'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.error),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Ya, Keluar',
-                style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm == true) {
-      try {
-        await AuthService().signOut();
-        if (!mounted) return;
-        Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
-      } catch (e) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal keluar: $e')),
-        );
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -169,9 +158,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         centerTitle: true,
         actions: [
           IconButton(
-            onPressed: _logout,
-            icon: const Icon(Icons.logout, color: Colors.white),
-            tooltip: 'Keluar',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const PengaturanScreen()),
+            ).then((_) => _loadUserProfile()), // Refresh data profil setelah kembali dari pengaturan
+            icon: const Icon(Icons.settings, color: Colors.white),
+            tooltip: 'Pengaturan',
           ),
         ],
       ),
@@ -188,14 +180,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 CircleAvatar(
                   radius: 30,
                   backgroundColor: Colors.white.withValues(alpha: 0.2),
-                  child: Text(
-                    _userName.isNotEmpty ? _userName[0].toUpperCase() : '?',
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
+                  backgroundImage: _fotoUrl.isNotEmpty 
+                      ? NetworkImage(_fotoUrl) 
+                      : null,
+                  child: _fotoUrl.isEmpty
+                      ? Text(
+                          _userName.isNotEmpty ? _userName[0].toUpperCase() : '?',
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        )
+                      : null,
                 ),
                 const SizedBox(height: 8),
                 Text(

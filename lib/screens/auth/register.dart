@@ -1,6 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:indonesaku/services/auth_service.dart';
+import 'package:indonesaku/services/cloudinary_service.dart';
 import '../../theme/app_colors.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -28,7 +32,7 @@ class _RegisterScreenState extends State<RegisterScreen>
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
 
-  // Step 3 — preferensi seni
+  // Step 3 (Penonton) — preferensi seni
   final List<String> _allSeniOptions = [
     'Seni Teater',
     'Seni Perwayangan',
@@ -38,6 +42,12 @@ class _RegisterScreenState extends State<RegisterScreen>
     'Seni Rupa',
   ];
   final Set<String> _selectedPreferensi = {};
+
+  // Step 3 (Seniman) — file upload
+  File? _cvFile;
+  File? _portofolioFile;
+  String? _cvFileName;
+  String? _portofolioFileName;
 
   bool _isLoading = false;
 
@@ -83,21 +93,87 @@ class _RegisterScreenState extends State<RegisterScreen>
     _goToStep(2);
   }
 
-  void _handleStep2Next() {
+  void _handleStep2Next() async {
     if (_formKey.currentState!.validate()) {
-      // Seniman tidak perlu pilih preferensi — langsung daftar
-      if (_selectedTipeAkun == 'seniman') {
-        _handleRegister();
-      } else {
-        _goToStep(3);
+      setState(() => _isLoading = true);
+
+      try {
+        final email = _emailController.text.trim();
+
+       final querySnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .where('email', isEqualTo: email)
+            .limit(1)
+            .get();
+
+        if (querySnapshot.docs.isNotEmpty) {
+          if (mounted) {
+            _showErrorSnackBar('Email sudah terdaftar. Silakan masuk atau gunakan email lain.');
+          }
+          return; // Berhenti di sini, JANGAN lanjut ke Step 3
+        }
+
+        if (mounted) {
+          _goToStep(3);
+        }
+        
+      } on FirebaseAuthException catch (e) {
+        if (mounted) {
+          _showErrorSnackBar(_authService.getErrorMessage(e.code));
+        }
+      } catch (e) {
+        if (mounted) {
+          _showErrorSnackBar('Terjadi kesalahan saat memeriksa email.');
+        }
+      } finally {
+        // 4. Matikan animasi loading apa pun hasilnya
+        if (mounted) {
+          setState(() => _isLoading = false); 
+        }
       }
+    }
+  }
+
+  Future<void> _pickFile(bool isCv) async {
+    FilePickerResult? result = await FilePicker.pickFiles(
+      type: FileType.custom,
+      // Batasi file ke format dokumen (bisa disesuaikan)
+      allowedExtensions: ['pdf', 'doc', 'docx'], 
+    );
+
+    if (result != null) {
+      setState(() {
+        if (isCv) {
+          _cvFile = File(result.files.single.path!);
+          _cvFileName = result.files.single.name;
+        } else {
+          _portofolioFile = File(result.files.single.path!);
+          _portofolioFileName = result.files.single.name;
+        }
+      });
     }
   }
 
   Future<void> _handleRegister() async {
     setState(() => _isLoading = true);
+    String? cvUrl;
+    String? portofolioUrl;
 
     try {
+      // 1. Jika Seniman, Upload File ke Cloudinary Dulu
+      if (_selectedTipeAkun == 'seniman') {
+        if (_cvFile == null || _portofolioFile == null) {
+          _showErrorSnackBar('Harap unggah CV dan Portofolio terlebih dahulu.');
+          setState(() => _isLoading = false);
+          return;
+        }
+
+        // Panggil fungsi dari CloudinaryService
+        cvUrl = await CloudinaryService.uploadDocument(_cvFile!);
+        portofolioUrl = await CloudinaryService.uploadDocument(_portofolioFile!);
+      }
+
+      // 2. Simpan Data ke Firestore via AuthService
       await _authService.registerWithEmailAndPassword(
         nama: _namaController.text.trim(),
         email: _emailController.text.trim(),
@@ -105,16 +181,19 @@ class _RegisterScreenState extends State<RegisterScreen>
         tipeAkun: _selectedTipeAkun,
         preferensiSeni: _selectedPreferensi.toList(),
         tanggalLahir: _tanggalLahirController.text.trim(),
+        cvUrl: cvUrl,
+        portofolioUrl: portofolioUrl,
       );
 
       if (!mounted) return;
       Navigator.of(context).pushReplacementNamed('/home');
+      
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
       _showErrorSnackBar(_authService.getErrorMessage(e.code));
     } catch (e) {
       if (!mounted) return;
-      _showErrorSnackBar('Terjadi kesalahan. Silakan coba lagi.');
+      _showErrorSnackBar('Terjadi kesalahan: ${e.toString()}');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -181,7 +260,9 @@ class _RegisterScreenState extends State<RegisterScreen>
       case 2:
         return _buildStep2();
       case 3:
-        return _buildStep3();
+        return _selectedTipeAkun == 'seniman'
+            ? _buildStep3Seniman()
+            : _buildStep3Penonton();
       default:
         return _buildStep1();
     }
@@ -431,9 +512,9 @@ class _RegisterScreenState extends State<RegisterScreen>
   }
 
   // ─────────────────────────────────────────────
-  // STEP 3 — Pilih preferensi seni (Penonton only)
+  // STEP 3A — Pilih preferensi seni (Penonton only)
   // ─────────────────────────────────────────────
-  Widget _buildStep3() {
+  Widget _buildStep3Penonton() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 28.0),
       child: Column(
@@ -540,6 +621,91 @@ class _RegisterScreenState extends State<RegisterScreen>
 
           const SizedBox(height: 56),
         ],
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  // STEP 3B — Unggah File (Seniman)
+  // ─────────────────────────────────────────────
+  Widget _buildStep3Seniman() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 28.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              GestureDetector(
+                onTap: () => _goToStep(2),
+                child: const SizedBox(width: 24, child: Icon(Icons.arrow_back_ios_new, size: 20, color: AppColors.secondary)),
+              ),
+              const Expanded(
+                child: Text('Daftar', textAlign: TextAlign.center, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: _primaryColor,)),
+              ),
+              const SizedBox(width: 24),
+            ],
+          ),
+          const SizedBox(height: 48),
+
+          _FieldLabel('Unggah CV'),
+          const SizedBox(height: 8),
+          _buildUploadBox(
+            fileName: _cvFileName,
+            onTap: () => _pickFile(true),
+          ),
+
+          const SizedBox(height: 24),
+
+          _FieldLabel('Unggah Portofolio'),
+          const SizedBox(height: 8),
+          _buildUploadBox(
+            fileName: _portofolioFileName,
+            onTap: () => _pickFile(false),
+          ),
+
+          const Spacer(),
+          _PrimaryButton(
+            label: 'Daftar',
+            onPressed: _isLoading ? null : _handleRegister,
+            isLoading: _isLoading,
+          ),
+          const SizedBox(height: 56),
+        ],
+      ),
+    );
+  }
+
+  // UI Box Upload File
+  Widget _buildUploadBox({required String? fileName, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 120,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.shade300, width: 1.5),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.cloud_upload, size: 48, color: Colors.grey.shade300),
+            const SizedBox(height: 8),
+            Text(
+              fileName ?? 'Klik di sini untuk mengunggah',
+              style: TextStyle(
+                fontSize: 14,
+                color: fileName != null ? AppColors.primary : Colors.grey.shade400,
+                fontWeight: fileName != null ? FontWeight.bold : FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
     );
   }

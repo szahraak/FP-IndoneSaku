@@ -286,42 +286,45 @@ class _BrowseShowsScreenState extends State<BrowseShowsScreen> {
   void _showCityFilter() {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const SizedBox(height: 16),
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: AppColors.divider,
-              borderRadius: BorderRadius.circular(2),
+      builder: (_) => SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 16),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.divider,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          const Text('Pilih Kota',
-              style: TextStyle(
-                  fontWeight: FontWeight.w700, fontSize: 16)),
-          const SizedBox(height: 8),
-          ..._kotaList.map((kota) => ListTile(
-                title: Text(kota),
-                trailing: kota == (_selectedKota.isEmpty
-                        ? 'Semua Kota'
-                        : _selectedKota)
-                    ? const Icon(Icons.check, color: AppColors.primary)
-                    : null,
-                onTap: () {
-                  setState(() => _selectedKota =
-                      kota == 'Semua Kota' ? '' : kota);
-                  Navigator.pop(context);
-                  _loadShows();
-                },
-              )),
-          const SizedBox(height: 16),
-        ],
+            const SizedBox(height: 16),
+            const Text('Pilih Kota',
+                style: TextStyle(
+                    fontWeight: FontWeight.w700, fontSize: 16)),
+            const SizedBox(height: 8),
+            ..._kotaList.map((kota) => ListTile(
+                  title: Text(kota),
+                  trailing: kota == (_selectedKota.isEmpty
+                          ? 'Semua Kota'
+                          : _selectedKota)
+                      ? const Icon(Icons.check, color: AppColors.primary)
+                      : null,
+                  onTap: () {
+                    setState(() => _selectedKota =
+                        kota == 'Semua Kota' ? '' : kota);
+                    Navigator.pop(context);
+                    _loadShows();
+                  },
+                )),
+            const SizedBox(height: 24),
+          ],
+        ),
       ),
     );
   }

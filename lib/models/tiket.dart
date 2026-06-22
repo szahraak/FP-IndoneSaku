@@ -108,7 +108,7 @@ class TiketPesanan {
   // ── Midtrans fields ──────────────────────────────────────────────────
   /// Snap token yang didapat dari Cloud Function — dipakai untuk buka
   /// halaman pembayaran Midtrans Snap. Nilainya sementara (expire ~1 jam).
-  final String? snapToken;
+  String? snapToken;
 
   /// Order ID yang dikirim ke Midtrans — sama dengan [id] pesanan,
   /// dipakai untuk mencocokkan webhook callback dari Midtrans.

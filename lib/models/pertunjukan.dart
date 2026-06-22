@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'tiket.dart';
 
 class Pertunjukan {
   final String id;
@@ -11,14 +12,12 @@ class Pertunjukan {
   final String kota;
   final GeoPoint? lokasi;
   final Timestamp tanggal;
-  final num harga;
-  final num stokTiket;
   final String status;
   final Timestamp dibuatPada;
-
-  // Extra fields for homepage features (not in class diagram but needed for UI)
-  final int? jumlahDipesan; // for trending
+  final int? jumlahDipesan;
   final double? rating;
+  final num hargaTermurah;
+  final List<JenisTiket> daftarTiket;
 
   Pertunjukan({
     required this.id,
@@ -31,16 +30,26 @@ class Pertunjukan {
     required this.kota,
     this.lokasi,
     required this.tanggal,
-    required this.harga,
-    required this.stokTiket,
     required this.status,
     required this.dibuatPada,
     this.jumlahDipesan,
     this.rating,
+    required this.hargaTermurah,
+    required this.daftarTiket,
   });
 
   factory Pertunjukan.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
+    
+    final List<dynamic> tiketRaw = data['daftarTiket'] ?? [];
+    final List<JenisTiket> tiketList = tiketRaw.map((t) => JenisTiket(
+      id: t['id'] ?? '',
+      nama: t['nama'] ?? '',
+      harga: (t['harga'] as num?)?.toDouble() ?? 0,
+      stok: (t['stok'] as num?)?.toInt() ?? 0,
+      deskripsi: t['deskripsi'],
+    )).toList();
+
     return Pertunjukan(
       id: doc.id,
       senimanUid: data['seniman_uid'] ?? '',
@@ -52,12 +61,12 @@ class Pertunjukan {
       kota: data['kota'] ?? '',
       lokasi: data['lokasi'],
       tanggal: data['tanggal'] ?? Timestamp.now(),
-      harga: data['harga'] ?? 0,
-      stokTiket: data['stokTiket'] ?? 0,
       status: data['status'] ?? 'aktif',
       dibuatPada: data['dibuatPada'] ?? Timestamp.now(),
       jumlahDipesan: data['jumlahDipesan'],
       rating: (data['rating'] as num?)?.toDouble(),
+      hargaTermurah: data['hargaTermurah'] ?? 0,
+      daftarTiket: tiketList,
     );
   }
 
@@ -72,28 +81,36 @@ class Pertunjukan {
       'kota': kota,
       'lokasi': lokasi,
       'tanggal': tanggal,
-      'harga': harga,
-      'stokTiket': stokTiket,
       'status': status,
       'dibuatPada': dibuatPada,
       'jumlahDipesan': jumlahDipesan,
       'rating': rating,
+      'hargaTermurah': hargaTermurah,
+      'daftarTiket': daftarTiket.map((t) => {
+        'id': t.id,
+        'nama': t.nama,
+        'harga': t.harga,
+        'stok': t.stok,
+        'deskripsi': t.deskripsi,
+      }).toList(),
     };
   }
 
+  // Helper getters
   String get formattedHarga {
-    if (harga == 0) return 'Gratis';
-    final h = harga.toInt();
+    if (hargaTermurah == 0) return 'Mulai dari Gratis';
+    final h = hargaTermurah.toInt();
     final str = h.toString();
     final buffer = StringBuffer();
     for (int i = 0; i < str.length; i++) {
       if (i > 0 && (str.length - i) % 3 == 0) buffer.write('.');
       buffer.write(str[i]);
     }
-    return 'Rp ${buffer.toString()}';
+    return 'Mulai Rp ${buffer.toString()}';
   }
 
   DateTime get tanggalDateTime => tanggal.toDate();
-
   bool get isUpcoming => tanggalDateTime.isAfter(DateTime.now());
+  
+  int get totalStok => daftarTiket.fold(0, (total, tiket) => total + tiket.stok);
 }

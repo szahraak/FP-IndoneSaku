@@ -2,12 +2,15 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class CloudinaryService {
   // Replace with your actual Cloudinary cloud name and unsigned upload preset
-  static const String _cloudName = 'YOUR_CLOUD_NAME';
+  static final String _cloudName = dotenv.env['CLOUDINARY_CLOUD_NAME'] ?? '';
   static const String _uploadPresetImage = 'indonesaku_posters';
   static const String _uploadPresetVideo = 'indonesaku_videos';
+  static const String _uploadPresetDoc = 'indonesaku_seniman_docs';
+  static const String _uploadPresetProfile = 'indonesaku_profiles';
 
   static const String _baseUrl = 'https://api.cloudinary.com/v1_1';
 
@@ -28,6 +31,26 @@ class CloudinaryService {
       resourceType: 'video',
       uploadPreset: _uploadPresetVideo,
       folder: 'teasers',
+    );
+  }
+
+  /// Upload a document file (CV / Portfolio). Returns the secure URL or throws.
+  static Future<String> uploadDocument(File docFile) async {
+    return _upload(
+      file: docFile,
+      // Gunakan 'auto' agar Cloudinary otomatis mengenali PDF/DOC tanpa merusaknya
+      resourceType: 'auto', 
+      uploadPreset: _uploadPresetDoc,
+      folder: 'seniman_docs', 
+    );
+  }
+
+  static Future<String> uploadProfilePicture(File imageFile) async {
+    return _upload(
+      file: imageFile,
+      resourceType: 'image',
+      uploadPreset: _uploadPresetProfile, // Gunakan preset yang baru
+      folder: 'profiles', // Nama folder di Cloudinary
     );
   }
 

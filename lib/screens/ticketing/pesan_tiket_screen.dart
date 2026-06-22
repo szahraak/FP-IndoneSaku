@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/pertunjukan.dart';
 import '../../models/tiket.dart';
 import '../../services/ticketing_service.dart';
@@ -34,16 +35,10 @@ class _PesanTiketScreenState extends State<PesanTiketScreen> {
   @override
   void initState() {
     super.initState();
-    TicketingService.getJenisTiket(widget.pertunjukan.id).then((list) {
-      if (mounted) {
-        setState(() {
-          _jenisTiket = list;
-          _loadingJenisTiket = false;
-        });
-      }
-    }).catchError((_) {
-      if (mounted) setState(() => _loadingJenisTiket = false);
-    });
+
+    _jenisTiket = widget.pertunjukan.daftarTiket;
+    _loadingJenisTiket = false;
+
     TicketingService.getCurrentUserInfo().then((info) {
       if (mounted) {
         setState(() {
@@ -184,6 +179,11 @@ class _PesanTiketScreenState extends State<PesanTiketScreen> {
 
       // 2. Langsung dapatkan Snap Token dari Midtrans
       final snapResult = await MidtransService.getSnapToken(pesanan);
+
+      await FirebaseFirestore.instance.collection('pesanan').doc(pesanan.id).update({
+        'snapToken': snapResult.snapToken,
+      });
+      pesanan.snapToken = snapResult.snapToken;
 
       if (!mounted) return;
       

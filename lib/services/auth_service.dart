@@ -32,6 +32,8 @@ class AuthService {
     required String tipeAkun, // 'penonton' | 'seniman'
     required List<String> preferensiSeni,
     required String tanggalLahir, // format DD/MM/YYYY
+    String? cvUrl,
+    String? portofolioUrl,
   }) async {
     final credential = await _auth.createUserWithEmailAndPassword(
       email: email,
@@ -58,6 +60,22 @@ class AuthService {
         .doc(credential.user!.uid)
         .set(userModel.toMap());
 
+    if (tipeAkun == 'seniman') {
+      await _firestore.collection('seniman').doc(credential.user!.uid).set({
+        'uid': credential.user!.uid,
+        'nama': nama,
+        'email': email,
+        'fotoUrl': '',
+        'tipeAkun': tipeAkun,
+        'preferensiSeni': preferensiSeni,
+        'dibuatPada': Timestamp.now(),
+        'cvUrl': cvUrl,
+        'portofolioUrl': portofolioUrl,
+        'jumlahPertunjukan': 0,
+        'rating': 0.0,
+      });
+    }
+    
     return credential;
   }
 
