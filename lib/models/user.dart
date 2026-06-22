@@ -9,6 +9,8 @@ class UserModel {
   final List<String> preferensiSeni;
   final String tanggalLahir; // format DD/MM/YYYY
   final Timestamp createdAt;
+  final String? cvUrl;        // khusus seniman
+  final String? portofolioUrl; // khusus seniman
 
   const UserModel({
     required this.uid,
@@ -19,6 +21,8 @@ class UserModel {
     required this.preferensiSeni,
     required this.tanggalLahir,
     required this.createdAt,
+    this.cvUrl,
+    this.portofolioUrl,
   });
 
   factory UserModel.fromMap(Map<String, dynamic> map, String uid) {
@@ -31,6 +35,8 @@ class UserModel {
       preferensiSeni: List<String>.from(map['preferensiSeni'] ?? []),
       tanggalLahir: map['tanggalLahir'] ?? '',
       createdAt: map['createdAt'] ?? Timestamp.now(),
+      cvUrl: map['cvUrl'] as String?,
+      portofolioUrl: map['portofolioUrl'] as String?,
     );
   }
 
@@ -44,6 +50,8 @@ class UserModel {
       'preferensiSeni': preferensiSeni,
       'tanggalLahir': tanggalLahir,
       'createdAt': createdAt,
+      if (cvUrl != null) 'cvUrl': cvUrl,
+      if (portofolioUrl != null) 'portofolioUrl': portofolioUrl,
     };
   }
 
@@ -56,6 +64,8 @@ class UserModel {
     List<String>? preferensiSeni,
     String? tanggalLahir,
     Timestamp? createdAt,
+    String? cvUrl,
+    String? portofolioUrl,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -66,6 +76,8 @@ class UserModel {
       preferensiSeni: preferensiSeni ?? this.preferensiSeni,
       tanggalLahir: tanggalLahir ?? this.tanggalLahir,
       createdAt: createdAt ?? this.createdAt,
+      cvUrl: cvUrl ?? this.cvUrl,
+      portofolioUrl: portofolioUrl ?? this.portofolioUrl,
     );
   }
 }

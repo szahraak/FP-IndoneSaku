@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:indonesaku/models/user.dart';
+import 'package:indonesaku/services/crashlytics_service.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -17,10 +18,14 @@ class AuthService {
     required String email,
     required String password,
   }) async {
-    return await _auth.signInWithEmailAndPassword(
+    final credential = await _auth.signInWithEmailAndPassword(
       email: email,
       password: password,
     );
+    if (credential.user != null) {
+      await CrashlyticsService.setUser(credential.user!.uid, email);
+    }
+    return credential;
   }
 
   /// Register new user with email and password
@@ -53,6 +58,8 @@ class AuthService {
       preferensiSeni: preferensiSeni,
       tanggalLahir: tanggalLahir,
       createdAt: Timestamp.now(),
+      cvUrl: cvUrl,
+      portofolioUrl: portofolioUrl,
     );
 
     await _firestore
@@ -60,22 +67,9 @@ class AuthService {
         .doc(credential.user!.uid)
         .set(userModel.toMap());
 
-    if (tipeAkun == 'seniman') {
-      await _firestore.collection('seniman').doc(credential.user!.uid).set({
-        'uid': credential.user!.uid,
-        'nama': nama,
-        'email': email,
-        'fotoUrl': '',
-        'tipeAkun': tipeAkun,
-        'preferensiSeni': preferensiSeni,
-        'dibuatPada': Timestamp.now(),
-        'cvUrl': cvUrl,
-        'portofolioUrl': portofolioUrl,
-        'jumlahPertunjukan': 0,
-        'rating': 0.0,
-      });
-    }
-    
+    await CrashlyticsService.setUser(credential.user!.uid, email);
+    await CrashlyticsService.setCustomKey('tipe_akun', tipeAkun);
+
     return credential;
   }
 
@@ -123,6 +117,7 @@ class AuthService {
 
   /// Sign out
   Future<void> signOut() async {
+    await CrashlyticsService.clearUser();
     await _auth.signOut();
   }
 }

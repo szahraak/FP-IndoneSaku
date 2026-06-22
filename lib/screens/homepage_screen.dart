@@ -194,7 +194,7 @@ class _HomepageScreenState extends State<HomepageScreen> {
                         _buildRecommendedSection(),
                         _buildTrendingSection(),
                         _buildArtistSection(),
-                        const SizedBox(height: 32),
+                        const SizedBox(height: 80),
                       ],
                     ),
                   ),
