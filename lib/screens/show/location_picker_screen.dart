@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import '../theme/app_colors.dart';
+import '../../theme/app_colors.dart';
 
 /// A result from the location picker
 class LocationResult {
@@ -99,6 +99,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
         });
       }
     } catch (e) {
+      debugPrint('ERROR GOOGLE MAPS: $e');
       setState(() {
         _errorMsg = 'Tidak dapat terhubung ke layanan lokasi';
         _searching = false;

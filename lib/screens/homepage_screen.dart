@@ -4,8 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/pertunjukan.dart';
 import '../models/seniman.dart';
-import 'show_detail_screen.dart';
-import 'browse_shows_screen.dart';
+import 'show/show_detail_screen.dart';
+import 'show/browse_shows_screen.dart';
 import 'main_scaffold.dart';
 import '../theme/app_colors.dart';
 

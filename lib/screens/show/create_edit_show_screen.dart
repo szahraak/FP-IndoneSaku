@@ -4,12 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/pertunjukan.dart';
-import '../models/tiket.dart';
-import '../services/pertunjukan_service.dart';
-import '../services/cloudinary_service.dart';
+import '../../models/pertunjukan.dart';
+import '../../models/tiket.dart';
+import '../../services/pertunjukan_service.dart';
+import '../../services/cloudinary_service.dart';
 import 'location_picker_screen.dart';
-import '../theme/app_colors.dart';
+import '../../theme/app_colors.dart';
 
 class CreateEditShowScreen extends StatefulWidget {
   final Pertunjukan? existing;

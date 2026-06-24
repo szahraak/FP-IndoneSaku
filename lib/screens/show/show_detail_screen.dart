@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../models/pertunjukan.dart';
-import '../services/pertunjukan_service.dart';
-import '../theme/app_colors.dart';
-import 'ticketing/pesan_tiket_screen.dart';
+import '../../models/pertunjukan.dart';
+import '../../services/pertunjukan_service.dart';
+import '../../theme/app_colors.dart';
+import '../ticketing/pesan_tiket_screen.dart';
 
 class ShowDetailScreen extends StatefulWidget {
   final String showId;

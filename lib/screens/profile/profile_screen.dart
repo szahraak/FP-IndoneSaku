@@ -7,7 +7,7 @@ import '../../theme/app_colors.dart';
 import '../../models/tiket.dart';
 import '../../services/ticketing_service.dart';
 import '../ticketing/tiketmu_screen.dart';
-import '../my_shows_screen.dart';
+import '../show/my_shows_screen.dart';
 import 'settings_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
